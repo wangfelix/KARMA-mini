@@ -1,77 +1,45 @@
-# KIT Toolbox LLM Setup Project
+# KARMA Mini: Automated Knowledge Graph Extraction
 
-A clean, interactive, and production-ready Python project to experiment with open-source LLM APIs from the KIT toolbox.
+KARMA Mini is a streamlined, 3-agent natural language processing framework designed to automatically extract, standardize, and integrate biomedical knowledge from raw text abstracts into a structured Knowledge Graph. 
 
-## Features
+This project is a simplified reproduction of the original [KARMA architecture](https://github.com/YuxingLu613/KARMA), optimized for batch processing of short texts (like paper abstracts) and specifically designed to export data seamlessly into **Neo4j**.
 
-- **Virtual Environment (`.venv`)**: Pre-configured environment to keep dependencies isolated.
-- **Environment Variables (`.env`)**: Credentials stored securely in a local `.env` file (ignored by git for security).
-- **Flexible CLI (`main.py`)**: Easily query different models, customize prompts, or change system behaviors using command-line arguments.
+## The 3-Agent Architecture
 
----
+The pipeline is driven by three specialized Large Language Model (LLM) agents working in sequence:
 
-## Getting Started
+### 1. Information Extraction Agent (IEA)
+**Role:** The reader. It ingests the raw text of an abstract and extracts key biomedical entities (e.g., Diseases, Drugs, Genes) and the explicit relationships between them.
+*   **Input:** Raw abstract text.
+*   **Output:** Raw Triples (e.g., `["Aspirin", "lowers", "Headache"]`) along with the source text evidence.
 
-### 1. Virtual Environment Setup
-A virtual environment has already been created in this workspace, and the required dependencies (`openai`, `python-dotenv`) have been installed. 
+### 2. Schema Alignment Agent (SAA)
+**Role:** The standardizer. It takes the raw, messy triples and maps them to a strict, predefined vocabulary (ontology). This ensures that different ways of saying the same thing (e.g., "reduces", "lowers", "decreases") are grouped under a single relationship type (e.g., `INHIBITS`).
+*   **Input:** Raw Triples.
+*   **Output:** Aligned Triples (e.g., `["Aspirin", "INHIBITS", "Headache"]`).
 
-To activate the virtual environment in your terminal:
+### 3. Knowledge Integration Agent (KIA)
+**Role:** The judge and synthesizer. After processing all abstracts, this agent reviews the global list of aligned triples. It merges duplicates, aggregates confidence scores, and crucially, resolves logical conflicts (e.g., Paper A says X inhibits Y, but Paper B says X activates Y) using LLM-based reasoning.
+*   **Input:** Global list of Aligned Triples.
+*   **Output:** The final, conflict-free Knowledge Graph.
 
-**On macOS / Linux:**
-```bash
-source .venv/bin/activate
-```
+## Tech Stack & Neo4j Integration
+*   **LLM Provider:** Uses the `openai` Python client configured for the KIT API toolbox.
+*   **Export:** The data structures are designed to export directly into `nodes.csv` and `relationships.csv`, optimized for `LOAD CSV` operations in Neo4j.
 
-**On Windows:**
-```powershell
-.venv\Scripts\activate
-```
+## Setup & Usage
 
----
+1.  **Install Dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-## How to Run
+2.  **Environment Variables:**
+    Create a `.env` file in the root directory:
+    ```env
+    KIT_API_KEY=your_actual_api_key_here
+    KIT_BASE_URL=https://ki-toolbox.scc.kit.edu/api/v1
+    ```
 
-You can run the script using the environment's Python interpreter directly:
-
-### 1. Run the default query (Rayleigh-Streuung)
-Using the default model `kit.gemma4-31b-it`:
-```bash
-python main.py
-```
-
-### 2. See all CLI options and available models
-```bash
-python main.py --help
-```
-
-### 3. Query a different model
-For example, using the `kit.mistral-small-4-119b-a8b` model:
-```bash
-python main.py --model kit.mistral-small-4-119b-a8b
-```
-
-### 4. Custom Prompt and System Message
-```bash
-python main.py \
-  --model kit.gemma4-31b-it \
-  --system "Du bist ein präziser Physiker." \
-  --prompt "Was ist die Lichtgeschwindigkeit im Vakuum?"
-```
-
----
-
-## Configuration
-
-The API credentials are loaded from the `.env` file in the root of the directory:
-- `KIT_API_KEY`: Your KIT Employee API Key.
-- `KIT_BASE_URL`: The KIT Toolbox gateway endpoint (`https://ki-toolbox.scc.kit.edu/api/v1`).
-
----
-
-## Available Models
-
-- `kit.gemma4-31b-it` (default)
-- `kit.gpt-oss-120b`
-- `kit.minimax-m2.5-229b`
-- `kit.minimax-m2.7-229b`
-- `kit.mistral-small-4-119b-a8b`
+3.  **Run Pipeline:**
+    *(Implementation pending - see `main.py`)*
