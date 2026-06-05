@@ -9,17 +9,17 @@ This project is a simplified reproduction of the original [KARMA architecture](h
 The pipeline is driven by three specialized Large Language Model (LLM) agents working in sequence:
 
 ### 1. Information Extraction Agent (IEA)
-**Role:** The reader. It ingests the raw text of an abstract and extracts key biomedical entities (e.g., Diseases, Drugs, Genes) and the explicit relationships between them.
+**Role:** Reader. It ingests the raw text of an abstract and extracts key biomedical entities (e.g., Diseases, Drugs, Genes) and the explicit relationships between them.
 *   **Input:** Raw abstract text.
 *   **Output:** Raw Triples (e.g., `["Aspirin", "lowers", "Headache"]`) along with the source text evidence.
 
 ### 2. Schema Alignment Agent (SAA)
-**Role:** The standardizer. It takes the raw, messy triples and maps them to a strict, predefined vocabulary (ontology). This ensures that different ways of saying the same thing (e.g., "reduces", "lowers", "decreases") are grouped under a single relationship type (e.g., `INHIBITS`).
+**Role:** Standardizer. It takes the raw, messy triples and maps them to a strict, predefined vocabulary (ontology). This ensures that different ways of saying the same thing (e.g., "reduces", "lowers", "decreases") are grouped under a single relationship type (e.g., `INHIBITS`).
 *   **Input:** Raw Triples.
 *   **Output:** Aligned Triples (e.g., `["Aspirin", "INHIBITS", "Headache"]`).
 
 ### 3. Knowledge Integration Agent (KIA)
-**Role:** The judge and synthesizer. After processing all abstracts, this agent reviews the global list of aligned triples. It merges duplicates, aggregates confidence scores, and crucially, resolves logical conflicts (e.g., Paper A says X inhibits Y, but Paper B says X activates Y) using LLM-based reasoning.
+**Role:** Conflict Resolution and Synthesizer. After processing all abstracts, this agent reviews the global list of aligned triples. It merges duplicates, aggregates confidence scores, and crucially, resolves logical conflicts (e.g., Paper A says X inhibits Y, but Paper B says X activates Y) using LLM-based reasoning.
 *   **Input:** Global list of Aligned Triples.
 *   **Output:** The final, conflict-free Knowledge Graph.
 
@@ -42,4 +42,19 @@ The pipeline is driven by three specialized Large Language Model (LLM) agents wo
     ```
 
 3.  **Run Pipeline:**
-    *(Implementation pending - see `main.py`)*
+    Execute the main pipeline script. You can specify the model, input data, and timeout. By default, it processes `data/abstracts.json` using the `kit.mistral-small-4-119b-a8b` model.
+    ```bash
+    python main.py
+    ```
+
+    You can also provide custom arguments:
+    ```bash
+    python main.py --model kit.gemma4-31b-it --data path/to/your/data.json --timeout 120.0
+    ```
+
+4.  **Visualize Output:**
+    After running the pipeline, a final knowledge graph JSON will be generated in `data/output/`. You can visualize the results using the `visualize.py` script:
+    ```bash
+    python visualize.py
+    ```
+    This will generate an interactive HTML graph at `data/output/graph.html` which you can open in your web browser.
