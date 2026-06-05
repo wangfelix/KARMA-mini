@@ -22,7 +22,6 @@ class BaseAgent:
             {"role": "user", "content": prompt}
         ]
 
-        # Use KIT toolbox parameter logic or general OpenAI logic
         try:
             response = self.client.chat.completions.create(
                 model=self.model_name,
@@ -32,7 +31,7 @@ class BaseAgent:
             return response.choices[0].message.content.strip()
         except Exception as e:
             logger.error(f"{self.__class__.__name__} LLM call failed: {str(e)}")
-            return "[]" # return empty JSON array on error
+            return "[]"
 
     def _parse_json_response(self, response: str) -> List[Dict]:
         try:
