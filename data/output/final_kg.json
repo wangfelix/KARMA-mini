@@ -1,0 +1,702 @@
+{
+  "entities": [
+    {
+      "name": "incidence of grade 3 or higher adverse events (83.3%)"
+    },
+    {
+      "name": "change in HbA1c"
+    },
+    {
+      "name": "overall survival (24.4 months)"
+    },
+    {
+      "name": "encouraging efficacy and safety"
+    },
+    {
+      "name": "HbA1c"
+    },
+    {
+      "name": "her2-positive gastroesophageal adenocarcinoma"
+    },
+    {
+      "name": "overall survival"
+    },
+    {
+      "name": "hazard ratio for progression or death (0.63 [95% ci, 0.51 to 0.78])"
+    },
+    {
+      "name": "aspirin"
+    },
+    {
+      "name": "zanidatamab-chemotherapy"
+    },
+    {
+      "name": "15 mg or maximum tolerated dose"
+    },
+    {
+      "name": "prostaglandin e2 (pge2)"
+    },
+    {
+      "name": "human epidermal growth factor receptor 2 (her2)"
+    },
+    {
+      "name": "change in hemoglobin A1c (HbA1c)"
+    },
+    {
+      "name": "change in hba1c"
+    },
+    {
+      "name": "hazard ratio for death (0.72 [95% CI, 0.57 to 0.90])"
+    },
+    {
+      "name": "hazard ratio (0.80 [95% CI, 0.64 to 1.01])"
+    },
+    {
+      "name": "gastrointestinal adverse events"
+    },
+    {
+      "name": "chemotherapy"
+    },
+    {
+      "name": "normoglycemia (HbA1c <5.7%)"
+    },
+    {
+      "name": "intensified conventional care (ICC)"
+    },
+    {
+      "name": "Zanidatamab"
+    },
+    {
+      "name": "acetylsalicylic acid (aspirin)"
+    },
+    {
+      "name": "COX-2"
+    },
+    {
+      "name": "hazard ratio for progression or death (0.63 [95% CI, 0.51 to 0.78])"
+    },
+    {
+      "name": "pain signaling"
+    },
+    {
+      "name": "waist circumference"
+    },
+    {
+      "name": "hazard ratio (0.80 [95% ci, 0.64 to 1.01])"
+    },
+    {
+      "name": "change in waist circumference"
+    },
+    {
+      "name": "Zanidatamab and tislelizumab plus chemotherapy"
+    },
+    {
+      "name": "hazard ratio for death (0.72 [95% ci, 0.57 to 0.90])"
+    },
+    {
+      "name": "acute inflammation"
+    },
+    {
+      "name": "change in weight"
+    },
+    {
+      "name": "including GLP-1RAs but excluding tirzepatide"
+    },
+    {
+      "name": "zanidatamab"
+    },
+    {
+      "name": "Overall survival (19.2 months)"
+    },
+    {
+      "name": "hba1c"
+    },
+    {
+      "name": "glucose-dependent insulinotropic polypeptide and glucagon-like peptide-1 receptor agonist (glp-1ra)"
+    },
+    {
+      "name": "trastuzumab plus chemotherapy"
+    },
+    {
+      "name": "hazard ratio for progression or death (0.65 [95% CI, 0.52 to 0.81])"
+    },
+    {
+      "name": "zanidatamab-tislelizumab-chemotherapy (26.4 months)"
+    },
+    {
+      "name": "prostaglandin E2 (PGE2)"
+    },
+    {
+      "name": "Zanidatamab-tislelizumab-chemotherapy"
+    },
+    {
+      "name": "progression-free survival (8.1 months)"
+    },
+    {
+      "name": "hazard ratio for progression or death"
+    },
+    {
+      "name": "diarrhea"
+    },
+    {
+      "name": "cox-2 activity"
+    },
+    {
+      "name": "overall survival (19.2 months)"
+    },
+    {
+      "name": "glucose-dependent insulinotropic polypeptide and glucagon-like peptide-1 receptor agonist (GLP-1RA)"
+    },
+    {
+      "name": "including glp-1ras but excluding tirzepatide"
+    },
+    {
+      "name": "incidence of grade 3 or higher adverse events (73.8%)"
+    },
+    {
+      "name": "cox-2"
+    },
+    {
+      "name": "HER2-positive gastroesophageal adenocarcinoma"
+    },
+    {
+      "name": "mean changes from baseline to 2 years in waist circumference"
+    },
+    {
+      "name": "COX-2 activity"
+    },
+    {
+      "name": "headache symptoms"
+    },
+    {
+      "name": "Zanidatamab plus chemotherapy"
+    },
+    {
+      "name": "progression-free survival"
+    },
+    {
+      "name": "mean changes from baseline to 2 years in hba1c"
+    },
+    {
+      "name": "intensified conventional care (icc)"
+    },
+    {
+      "name": "hazard ratio for progression or death (0.65 [95% ci, 0.52 to 0.81])"
+    },
+    {
+      "name": "zanidatamab and tislelizumab plus chemotherapy"
+    },
+    {
+      "name": "tislelizumab"
+    },
+    {
+      "name": "inflammatory pathways"
+    },
+    {
+      "name": "the most common adverse event"
+    },
+    {
+      "name": "better and more durable glycemic control"
+    },
+    {
+      "name": "normoglycemia (hba1c <5.7%)"
+    },
+    {
+      "name": "tirzepatide"
+    },
+    {
+      "name": "zanidatamab plus chemotherapy"
+    },
+    {
+      "name": "weight"
+    },
+    {
+      "name": "Overall survival"
+    },
+    {
+      "name": "human epidermal growth factor receptor 2 (HER2)"
+    },
+    {
+      "name": "mean changes from baseline to 2 years in weight"
+    },
+    {
+      "name": "programmed death 1"
+    },
+    {
+      "name": "zanidatamab-tislelizumab-chemotherapy"
+    },
+    {
+      "name": "incidence of grade 3 or higher adverse events (74.5%)"
+    },
+    {
+      "name": "change in hemoglobin a1c (hba1c)"
+    },
+    {
+      "name": "mean changes from baseline to 2 years in HbA1c"
+    },
+    {
+      "name": "overall survival (26.4 months)"
+    },
+    {
+      "name": "trastuzumab-chemotherapy"
+    }
+  ],
+  "triples": [
+    {
+      "head": "acetylsalicylic acid (aspirin)",
+      "relation": "INHIBITS",
+      "tail": "cox-2 activity",
+      "confidence": 0.5,
+      "source": "abstract_001",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "cox-2 activity",
+      "relation": "DECREASES",
+      "tail": "prostaglandin e2 (pge2)",
+      "confidence": 0.5,
+      "source": "abstract_001",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "cox-2",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "inflammatory pathways",
+      "confidence": 0.5,
+      "source": "abstract_001",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "cox-2",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "pain signaling",
+      "confidence": 0.5,
+      "source": "abstract_001",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "aspirin",
+      "relation": "TREATS",
+      "tail": "acute inflammation",
+      "confidence": 0.5,
+      "source": "abstract_001",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "aspirin",
+      "relation": "TREATS",
+      "tail": "headache symptoms",
+      "confidence": 0.5,
+      "source": "abstract_001",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab",
+      "relation": "INTERACTS_WITH",
+      "tail": "human epidermal growth factor receptor 2 (her2)",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab",
+      "relation": "INTERACTS_WITH",
+      "tail": "chemotherapy",
+      "confidence": 0.7,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab",
+      "relation": "INTERACTS_WITH",
+      "tail": "tislelizumab",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tislelizumab",
+      "relation": "INTERACTS_WITH",
+      "tail": "chemotherapy",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tislelizumab",
+      "relation": "INTERACTS_WITH",
+      "tail": "programmed death 1",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab and tislelizumab plus chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "encouraging efficacy and safety",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab and tislelizumab plus chemotherapy",
+      "relation": "TREATS",
+      "tail": "her2-positive gastroesophageal adenocarcinoma",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-tislelizumab-chemotherapy",
+      "relation": "INCREASES",
+      "tail": "progression-free survival",
+      "confidence": 0.7,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-chemotherapy",
+      "relation": "INCREASES",
+      "tail": "progression-free survival",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "trastuzumab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "progression-free survival (8.1 months)",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-tislelizumab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "hazard ratio for progression or death (0.63 [95% ci, 0.51 to 0.78])",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "hazard ratio for progression or death (0.65 [95% ci, 0.52 to 0.81])",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "trastuzumab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "hazard ratio for progression or death",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "overall survival",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "zanidatamab-tislelizumab-chemotherapy (26.4 months)",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "trastuzumab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "overall survival (19.2 months)",
+      "confidence": 0.7,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-tislelizumab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "hazard ratio for death (0.72 [95% ci, 0.57 to 0.90])",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "overall survival (24.4 months)",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "hazard ratio (0.80 [95% ci, 0.64 to 1.01])",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-tislelizumab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "incidence of grade 3 or higher adverse events (83.3%)",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "incidence of grade 3 or higher adverse events (73.8%)",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "trastuzumab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "incidence of grade 3 or higher adverse events (74.5%)",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "diarrhea",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "the most common adverse event",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab plus chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "trastuzumab plus chemotherapy",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "zanidatamab-tislelizumab-chemotherapy",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "overall survival (26.4 months)",
+      "confidence": 0.5,
+      "source": "abstract_002",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "INTERACTS_WITH",
+      "tail": "glucose-dependent insulinotropic polypeptide and glucagon-like peptide-1 receptor agonist (glp-1ra)",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "better and more durable glycemic control",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "intensified conventional care (icc)",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "DECREASES",
+      "tail": "hba1c",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "DECREASES",
+      "tail": "weight",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "DECREASES",
+      "tail": "waist circumference",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "normoglycemia (hba1c <5.7%)",
+      "confidence": 0.7,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "intensified conventional care (icc)",
+      "relation": "INTERACTS_WITH",
+      "tail": "including glp-1ras but excluding tirzepatide",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "change in hemoglobin a1c (hba1c)",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "change in hba1c",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "change in weight",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "change in waist circumference",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "INTERACTS_WITH",
+      "tail": "15 mg or maximum tolerated dose",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "mean changes from baseline to 2 years in hba1c",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "mean changes from baseline to 2 years in weight",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "TREATS",
+      "tail": "mean changes from baseline to 2 years in waist circumference",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "intensified conventional care (icc)",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "normoglycemia (hba1c <5.7%)",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "tirzepatide",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "gastrointestinal adverse events",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    },
+    {
+      "head": "intensified conventional care (icc)",
+      "relation": "ASSOCIATED_WITH",
+      "tail": "gastrointestinal adverse events",
+      "confidence": 0.5,
+      "source": "abstract_003",
+      "relevance": 0.0,
+      "clarity": 0.0
+    }
+  ],
+  "metadata": {},
+  "statistics": {
+    "entity_count": 80,
+    "triple_count": 49,
+    "unique_relations": 6,
+    "relation_distribution": {
+      "INHIBITS": 1,
+      "DECREASES": 4,
+      "ASSOCIATED_WITH": 21,
+      "TREATS": 13,
+      "INTERACTS_WITH": 8,
+      "INCREASES": 2
+    },
+    "avg_confidence": 0.5163265306122449
+  }
+}

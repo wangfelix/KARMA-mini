@@ -1,0 +1,50 @@
+:START_ID,:END_ID,:TYPE,confidence,source
+acetylsalicylic acid (aspirin),cox-2 activity,INHIBITS,0.5,abstract_001
+cox-2 activity,prostaglandin e2 (pge2),DECREASES,0.5,abstract_001
+cox-2,inflammatory pathways,ASSOCIATED_WITH,0.5,abstract_001
+cox-2,pain signaling,ASSOCIATED_WITH,0.5,abstract_001
+aspirin,acute inflammation,TREATS,0.5,abstract_001
+aspirin,headache symptoms,TREATS,0.5,abstract_001
+zanidatamab,human epidermal growth factor receptor 2 (her2),INTERACTS_WITH,0.5,abstract_002
+zanidatamab,chemotherapy,INTERACTS_WITH,0.7,abstract_002
+zanidatamab,tislelizumab,INTERACTS_WITH,0.5,abstract_002
+tislelizumab,chemotherapy,INTERACTS_WITH,0.5,abstract_002
+tislelizumab,programmed death 1,INTERACTS_WITH,0.5,abstract_002
+zanidatamab and tislelizumab plus chemotherapy,encouraging efficacy and safety,ASSOCIATED_WITH,0.5,abstract_002
+zanidatamab and tislelizumab plus chemotherapy,her2-positive gastroesophageal adenocarcinoma,TREATS,0.5,abstract_002
+zanidatamab-tislelizumab-chemotherapy,progression-free survival,INCREASES,0.7,abstract_002
+zanidatamab-chemotherapy,progression-free survival,INCREASES,0.5,abstract_002
+trastuzumab-chemotherapy,progression-free survival (8.1 months),ASSOCIATED_WITH,0.5,abstract_002
+zanidatamab-tislelizumab-chemotherapy,"hazard ratio for progression or death (0.63 [95% ci, 0.51 to 0.78])",ASSOCIATED_WITH,0.5,abstract_002
+zanidatamab-chemotherapy,"hazard ratio for progression or death (0.65 [95% ci, 0.52 to 0.81])",ASSOCIATED_WITH,0.5,abstract_002
+trastuzumab-chemotherapy,hazard ratio for progression or death,ASSOCIATED_WITH,0.5,abstract_002
+overall survival,zanidatamab-tislelizumab-chemotherapy (26.4 months),ASSOCIATED_WITH,0.5,abstract_002
+trastuzumab-chemotherapy,overall survival (19.2 months),ASSOCIATED_WITH,0.7,abstract_002
+zanidatamab-tislelizumab-chemotherapy,"hazard ratio for death (0.72 [95% ci, 0.57 to 0.90])",ASSOCIATED_WITH,0.5,abstract_002
+zanidatamab-chemotherapy,overall survival (24.4 months),ASSOCIATED_WITH,0.5,abstract_002
+zanidatamab-chemotherapy,"hazard ratio (0.80 [95% ci, 0.64 to 1.01])",ASSOCIATED_WITH,0.5,abstract_002
+zanidatamab-tislelizumab-chemotherapy,incidence of grade 3 or higher adverse events (83.3%),ASSOCIATED_WITH,0.5,abstract_002
+zanidatamab-chemotherapy,incidence of grade 3 or higher adverse events (73.8%),ASSOCIATED_WITH,0.5,abstract_002
+trastuzumab-chemotherapy,incidence of grade 3 or higher adverse events (74.5%),ASSOCIATED_WITH,0.5,abstract_002
+diarrhea,the most common adverse event,ASSOCIATED_WITH,0.5,abstract_002
+zanidatamab plus chemotherapy,trastuzumab plus chemotherapy,ASSOCIATED_WITH,0.5,abstract_002
+zanidatamab-tislelizumab-chemotherapy,overall survival (26.4 months),ASSOCIATED_WITH,0.5,abstract_002
+tirzepatide,glucose-dependent insulinotropic polypeptide and glucagon-like peptide-1 receptor agonist (glp-1ra),INTERACTS_WITH,0.5,abstract_003
+tirzepatide,better and more durable glycemic control,TREATS,0.5,abstract_003
+tirzepatide,intensified conventional care (icc),TREATS,0.5,abstract_003
+tirzepatide,hba1c,DECREASES,0.5,abstract_003
+tirzepatide,weight,DECREASES,0.5,abstract_003
+tirzepatide,waist circumference,DECREASES,0.5,abstract_003
+tirzepatide,normoglycemia (hba1c <5.7%),TREATS,0.7,abstract_003
+intensified conventional care (icc),including glp-1ras but excluding tirzepatide,INTERACTS_WITH,0.5,abstract_003
+tirzepatide,change in hemoglobin a1c (hba1c),TREATS,0.5,abstract_003
+tirzepatide,change in hba1c,TREATS,0.5,abstract_003
+tirzepatide,change in weight,TREATS,0.5,abstract_003
+tirzepatide,change in waist circumference,TREATS,0.5,abstract_003
+tirzepatide,15 mg or maximum tolerated dose,INTERACTS_WITH,0.5,abstract_003
+tirzepatide,mean changes from baseline to 2 years in hba1c,TREATS,0.5,abstract_003
+tirzepatide,mean changes from baseline to 2 years in weight,TREATS,0.5,abstract_003
+tirzepatide,mean changes from baseline to 2 years in waist circumference,TREATS,0.5,abstract_003
+intensified conventional care (icc),normoglycemia (hba1c <5.7%),ASSOCIATED_WITH,0.5,abstract_003
+tirzepatide,gastrointestinal adverse events,ASSOCIATED_WITH,0.5,abstract_003
+intensified conventional care (icc),gastrointestinal adverse events,ASSOCIATED_WITH,0.5,abstract_003

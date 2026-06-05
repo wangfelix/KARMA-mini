@@ -81,7 +81,7 @@ Return ONLY a JSON array of the raw relationships."""
 
         logger.info(f"IEA processing abstract {abstract_id}...")
         
-        # We use a slightly higher temperature (e.g., 0.2) for extraction to allow 
+        # Slightly higher temperature (e.g., 0.2) for extraction to allow
         # the model to flexibly capture the exact phrases used in the text.
         response_text = self._make_llm_call(prompt, temperature=0.2)
         

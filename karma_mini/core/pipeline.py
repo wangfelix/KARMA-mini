@@ -1,8 +1,9 @@
 import json
 import logging
+import os
 from typing import List, Dict
 
-from karma_mini.agents import InformationExtractionAgent, SchemaAlignmentAgent
+from karma_mini.agents import InformationExtractionAgent, SchemaAlignmentAgent, KnowledgeIntegrationAgent
 
 logger = logging.getLogger(__name__)
 
@@ -18,12 +19,11 @@ class KARMAPipeline:
         # Initialize agents
         self.iea = InformationExtractionAgent(client, model_name)
         self.saa = SchemaAlignmentAgent(client, model_name)
-        # self.kia = KnowledgeIntegrationAgent(client, model_name)
+        self.kia = KnowledgeIntegrationAgent(client, model_name)
         
     def process_abstracts(self, file_path: str):
         """
         Runs the pipeline on a JSON file containing abstracts.
-        Currently only runs Agent 1 (IEA) and prints the results.
         """
         # 1. Load data
         try:
@@ -65,8 +65,6 @@ class KARMAPipeline:
         print(" AGENT 2: SCHEMA ALIGNMENT ".center(60, "="))
         print("="*60)
         
-        # To avoid exceeding context windows, we can chunk the raw triples if there are too many.
-        # But for 30 abstracts, chunking by ~10 triples should be safe and fast.
         all_aligned_triples = []
         chunk_size = 10
         for i in range(0, len(all_raw_triples), chunk_size):
@@ -80,3 +78,41 @@ class KARMAPipeline:
             print(f"      -[ {triple.get('relation')} ]->")
             print(f"      {triple.get('tail')} ({triple.get('tail_type')})")
             print(f"      Source: {triple.get('source_id')}\n")
+
+        # 4. Agent 3: Knowledge Integration (Run globally)
+        print("\n" + "="*60)
+        print(" AGENT 3: KNOWLEDGE INTEGRATION ".center(60, "="))
+        print("="*60)
+
+        final_kg = self.kia.process(all_aligned_triples)
+
+        stats = final_kg.get_statistics()
+        print("\nFinal Knowledge Graph Statistics:")
+        print(f"  Total Entities: {stats['entity_count']}")
+        print(f"  Total Relationships: {stats['triple_count']}")
+        print(f"  Unique Relationship Types: {stats['unique_relations']}")
+
+        for rel_type, count in stats['relation_distribution'].items():
+            print(f"    - {rel_type}: {count}")
+
+        # 5. Export
+        print("\n" + "="*60)
+        print(" EXPORTING ".center(60, "="))
+        print("="*60)
+
+        output_dir = "data/output"
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Save raw JSON for debugging
+        json_path = os.path.join(output_dir, "final_kg.json")
+        final_kg.save_to_file(json_path)
+        print(f"Saved full JSON graph to: {json_path}")
+
+        # Save Neo4j ready CSVs
+        nodes_path = os.path.join(output_dir, "nodes.csv")
+        rels_path = os.path.join(output_dir, "relationships.csv")
+        final_kg.export_to_neo4j_csv(nodes_path, rels_path)
+        print(f"Saved Neo4j Nodes CSV to: {nodes_path}")
+        print(f"Saved Neo4j Relationships CSV to: {rels_path}")
+
+        print("\nPipeline Complete\n")

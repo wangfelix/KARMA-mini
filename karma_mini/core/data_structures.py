@@ -37,6 +37,14 @@ class KGEntity:
     @classmethod
     def from_dict(cls, data: Dict) -> 'KGEntity':
         return cls(**data)
+        
+    def __hash__(self):
+        return hash(self.entity_id)
+
+    def __eq__(self, other):
+        if isinstance(other, KGEntity):
+            return self.entity_id == other.entity_id
+        return False
 
 @dataclass
 class KnowledgeGraph:
@@ -70,12 +78,35 @@ class KnowledgeGraph:
 
     def to_dict(self) -> Dict:
         return {
-            'entities': list(self.entities),
+            'entities': [e.to_dict() if isinstance(e, KGEntity) else {"name": e} for e in self.entities],
             'triples': [triple.to_dict() for triple in self.triples],
             'metadata': self.metadata,
             'statistics': self.get_statistics()
         }
 
     def save_to_file(self, filepath: str):
+        # We need to make sure self.entities is serialized properly if it contains KGEntity objects.
+        data_to_save = self.to_dict()
         with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
+            json.dump(data_to_save, f, indent=2, ensure_ascii=False)
+
+    def export_to_neo4j_csv(self, nodes_path: str, relationships_path: str):
+        import csv
+        
+        # Write nodes
+        with open(nodes_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(['entity_id:ID', 'name', 'LABEL'])
+            for entity in self.entities:
+                if isinstance(entity, KGEntity):
+                    writer.writerow([entity.entity_id, entity.name, entity.entity_type])
+                else:
+                    # Fallback for plain strings
+                    writer.writerow([entity, entity, 'OTHER'])
+
+        # Write relationships
+        with open(relationships_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow([':START_ID', ':END_ID', ':TYPE', 'confidence', 'source'])
+            for triple in self.triples:
+                writer.writerow([triple.head, triple.tail, triple.relation, triple.confidence, triple.source])
