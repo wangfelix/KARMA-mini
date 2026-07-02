@@ -1,118 +1,90 @@
-import json
-import logging
-import os
-from typing import List, Dict
+"""
+KARMA Mini pipeline for the SemEval-2021 NLPContributionGraph (NCG) task.
 
-from karma_mini.agents import InformationExtractionAgent, SchemaAlignmentAgent, KnowledgeIntegrationAgent
+Each paper is processed independently and yields its own contribution graph
+rooted at a single "Contribution" node. There is no cross-paper merging and no
+global knowledge graph.
+"""
+
+import logging
+
+from karma_mini.agents import (
+    InformationExtractionAgent,
+    SchemaAlignmentAgent,
+    KnowledgeIntegrationAgent,
+)
+from karma_mini.loader import iter_papers
+from karma_mini.writer import write_predictions
 
 logger = logging.getLogger(__name__)
 
+
 class KARMAPipeline:
-    """
-    Orchestrates the KARMA Mini 3-Agent workflow.
-    """
-    
+
     def __init__(self, client, model_name: str):
         self.client = client
         self.model_name = model_name
-        
-        # Initialize agents
+
+        # Agent 1: contribution extraction over a whole paper.
         self.iea = InformationExtractionAgent(client, model_name)
+        # Agent 2: align each triple's info_unit to the 12-unit inventory.
         self.saa = SchemaAlignmentAgent(client, model_name)
+        # Agent 3: assemble the per-paper rooted contribution graph.
         self.kia = KnowledgeIntegrationAgent(client, model_name)
-        
-    def process_abstracts(self, file_path: str):
+
+    def process_papers(self, trial_root: str, out_root: str):
+        """Run the pipeline over every paper.
+
+        For each paper: loader -> IEA -> SAA -> KIA -> writer. Prints per-paper
+        triple counts. Writes predictions mirroring the gold folder layout.
         """
-        Runs the pipeline on a JSON file containing abstracts.
-        """
-        # 1. Load data
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                abstracts = json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to load abstracts from {file_path}: {e}")
+        papers = list(iter_papers(trial_root))
+        if not papers:
+            logger.error(f"No papers found under {trial_root}")
             return
 
-        logger.info(f"Loaded {len(abstracts)} abstracts for processing.")
-        
-        all_raw_triples = []
-        
-        # 2. Agent 1: Information Extraction (Run per abstract)
-        print("\n" + "="*60)
-        print(" AGENT 1: INFORMATION EXTRACTION ".center(60, "="))
-        print("="*60)
-        
-        for abstract in abstracts:
-            abs_id = abstract.get("id", "unknown_id")
-            text = abstract.get("text", "")
-            
-            print(f"\nProcessing: {abs_id} - '{abstract.get('title', 'No Title')}'")
-            
-            raw_triples = self.iea.process(text, abstract_id=abs_id)
-            all_raw_triples.extend(raw_triples)
-            
-            # Print the results to terminal
-            for i, triple in enumerate(raw_triples, 1):
-                print(f"  [{i}] {triple.get('head')} ({triple.get('head_type_guess')})")
-                print(f"      -[ {triple.get('relation')} ]->")
-                print(f"      {triple.get('tail')} ({triple.get('tail_type_guess')})")
-                print(f"      Evidence: \"{triple.get('evidence')}\"\n")
-                
-        print(f"\nTotal raw triples extracted: {len(all_raw_triples)}")
+        print(f"\nFound {len(papers)} paper(s) under {trial_root}\n")
 
-        # 3. Agent 2: Schema Alignment (Run on all raw triples)
-        print("\n" + "="*60)
-        print(" AGENT 2: SCHEMA ALIGNMENT ".center(60, "="))
-        print("="*60)
-        
-        all_aligned_triples = []
-        chunk_size = 10
-        for i in range(0, len(all_raw_triples), chunk_size):
-            chunk = all_raw_triples[i:i + chunk_size]
-            aligned_chunk = self.saa.process(chunk)
-            all_aligned_triples.extend(aligned_chunk)
-            
-        print(f"\nTotal aligned triples: {len(all_aligned_triples)}")
-        for i, triple in enumerate(all_aligned_triples, 1):
-            print(f"  [{i}] {triple.get('head')} ({triple.get('head_type')})")
-            print(f"      -[ {triple.get('relation')} ]->")
-            print(f"      {triple.get('tail')} ({triple.get('tail_type')})")
-            print(f"      Source: {triple.get('source_id')}\n")
+        totals = {"papers": 0, "triples": 0, "info_units": 0}
 
-        # 4. Agent 3: Knowledge Integration (Run globally)
-        print("\n" + "="*60)
-        print(" AGENT 3: KNOWLEDGE INTEGRATION ".center(60, "="))
-        print("="*60)
+        for paper in papers:
+            paper_id = paper["paper_id"]
+            sentences = paper["sentences"]
+            hints = paper["section_hints"]
+            sent_map = {ln: txt for ln, txt in sentences}
 
-        final_kg = self.kia.process(all_aligned_triples)
+            print("=" * 60)
+            print(f" {paper_id} ".center(60, "="))
+            print("=" * 60)
 
-        stats = final_kg.get_statistics()
-        print("\nFinal Knowledge Graph Statistics:")
-        print(f"  Total Entities: {stats['entity_count']}")
-        print(f"  Total Relationships: {stats['triple_count']}")
-        print(f"  Unique Relationship Types: {stats['unique_relations']}")
+            # 1. Information Extraction (contribution triples over the paper).
+            raw = self.iea.process(sentences, section_hints=hints)
+            for t in raw:
+                t["source_paper"] = paper_id
 
-        for rel_type, count in stats['relation_distribution'].items():
-            print(f"    - {rel_type}: {count}")
+            # 2. Schema Alignment (info-unit normalization).
+            aligned = self.saa.process(raw)
 
-        # 5. Export
-        print("\n" + "="*60)
-        print(" EXPORTING ".center(60, "="))
-        print("="*60)
+            # 3. Knowledge Integration (per-paper rooted graph assembly).
+            graph = self.kia.process(aligned, paper_id=paper_id)
 
-        output_dir = "data/output"
-        os.makedirs(output_dir, exist_ok=True)
+            # 4. Write predictions in the gold-matching layout.
+            stats = write_predictions(paper_id, graph, out_root, sentences=sent_map)
 
-        # Save raw JSON for debugging
-        json_path = os.path.join(output_dir, "final_kg.json")
-        final_kg.save_to_file(json_path)
-        print(f"Saved full JSON graph to: {json_path}")
+            units = ", ".join(graph.group_by_info_unit().keys()) or "(none)"
+            print(f"  triples    : {stats['triples']}")
+            print(f"  info units : {stats['info_units']}  [{units}]")
+            print(f"  sentences  : {stats['sentences']}")
+            print(f"  entities   : {stats['entities']}")
+            print(f"  -> {out_root}/{paper_id}\n")
 
-        # Save Neo4j ready CSVs
-        nodes_path = os.path.join(output_dir, "nodes.csv")
-        rels_path = os.path.join(output_dir, "relationships.csv")
-        final_kg.export_to_neo4j_csv(nodes_path, rels_path)
-        print(f"Saved Neo4j Nodes CSV to: {nodes_path}")
-        print(f"Saved Neo4j Relationships CSV to: {rels_path}")
+            totals["papers"] += 1
+            totals["triples"] += stats["triples"]
+            totals["info_units"] += stats["info_units"]
 
-        print("\nPipeline Complete\n")
+        print("=" * 60)
+        print(" SUMMARY ".center(60, "="))
+        print("=" * 60)
+        print(f"Papers processed : {totals['papers']}")
+        print(f"Total triples    : {totals['triples']}")
+        print(f"Predictions in   : {out_root}\n")

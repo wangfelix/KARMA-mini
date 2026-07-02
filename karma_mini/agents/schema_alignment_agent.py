@@ -1,107 +1,102 @@
 """
-Schema Alignment Agent (SAA) for KARMA Mini.
+Schema Alignment Agent (SAA) for KARMA Mini — NCG info-unit alignment.
 """
 
+import json
 import logging
 from typing import List, Dict
+
 from karma_mini.core.base_agent import BaseAgent
+from karma_mini.core.data_structures import INFO_UNITS, normalize_unit
 
 logger = logging.getLogger(__name__)
+
 
 class SchemaAlignmentAgent(BaseAgent):
     """
     Agent 2: Schema Alignment Agent (SAA)
-    
-    Role: Takes raw extracted triples (with messy, natural language relations 
-    and entity types) and standardizes them into a strict predefined ontology.
+
+    Role: align each triple's ``info_unit`` to the fixed 12-unit NCG inventory,
+    applying the normalization rules. The subject / predicate / object text is
+    left untouched, only the info_unit label is standardized.
+
+    The process is mostly deterministic (a rule table in ``normalize_unit``). A LLM
+    is used only as a fallback for the borderline labels the rules can't map.
     """
 
     def __init__(self, client, model_name: str):
-        system_prompt = """You are a Schema Alignment Agent (SAA) for a biomedical knowledge graph.
-Your task is to take raw, unstandardized biomedical relationships and map them to a strict, predefined vocabulary.
+        units = ", ".join(INFO_UNITS)
+        system_prompt = f"""You align messy information-unit labels to a fixed inventory for the NCG task.
 
-ALLOWED ENTITY CATEGORIES (Node Labels):
-- DRUG: Pharmaceuticals, therapeutic compounds (e.g., aspirin, chemotherapy)
-- DISEASE: Medical conditions, disorders, symptoms (e.g., cancer, headache)
-- GENE: Genetic elements
-- PROTEIN: Enzymes, receptors, antibodies (e.g., COX-2, HER2)
-- CHEMICAL: Small molecules, metabolites, ions (e.g., PGE2)
-- PATHWAY: Biological pathways
-- ANATOMY: Organs, tissues, cells
-- OTHER: Use only if absolutely none of the above fit
+The ONLY valid information units are: {units}.
 
-ALLOWED RELATION TYPES (Edge Types):
-- TREATS: Drug/intervention cures or alleviates disease/symptom
-- INHIBITS: Blocks, reduces activity, or suppresses
-- ACTIVATES: Stimulates, enhances, or upregulates
-- CAUSES: Triggers or leads to a condition
-- ASSOCIATED_WITH: Statistical or observational link
-- REGULATES: Controls expression or activity
-- INCREASES: Raises levels or quantity
-- DECREASES: Lowers levels or quantity
-- INTERACTS_WITH: Direct binding, targeting, or physical connection
+Normalization rules:
+  - "method" or "application" -> APPROACH
+  - "system" or "architecture" -> MODEL
+  - EXPERIMENTALSETUP only when hardware is mentioned, otherwise HYPERPARAMETERS
 
-GUIDELINES:
-1. You will be provided with a JSON array of raw triples.
-2. For each triple, map the `head_type_guess` and `tail_type_guess` to the closest ALLOWED ENTITY CATEGORY.
-3. Map the `relation` to the closest ALLOWED RELATION TYPE. 
-   - E.g., "reduces the production of" -> DECREASES
-   - E.g., "targets" -> INTERACTS_WITH
-   - E.g., "alleviates" -> TREATS
-4. Retain the exact `head`, `tail`, `evidence`, and `source_id` from the input. Do not change the actual entity names.
-5. If a relation cannot be mapped sensibly, default to INTERACTS_WITH or ASSOCIATED_WITH.
-
-OUTPUT FORMAT:
-Return ONLY a valid JSON array of objects. Do not include markdown formatting or explanations.
-[
-  {
-    "head": "exact input head",
-    "head_type": "MAPPED_CATEGORY",
-    "relation": "MAPPED_RELATION",
-    "tail": "exact input tail",
-    "tail_type": "MAPPED_CATEGORY",
-    "evidence": "exact input evidence",
-    "source_id": "exact input source_id"
-  }
-]"""
+You will receive a JSON array of objects, each with a "guess" label and the
+"subject"/"predicate"/"object" of the triple for context. For each item, return
+the single best-matching info unit token from the inventory. Do NOT change any
+text. Return ONLY a JSON array of objects: [{{"info_unit": "<TOKEN>"}}], one per
+input item, in the same order."""
         super().__init__(client, model_name, system_prompt)
 
-    def process(self, raw_triples: List[Dict]) -> List[Dict]:
-        """
-        Process a list of raw triples to align their schema.
+    def process(self, triples: List[Dict]) -> List[Dict]:
+        """Align the ``info_unit`` of every triple to the 12-unit inventory.
 
-        Args:
-            raw_triples: List of dictionaries representing raw triples.
-
-        Returns:
-            A list of dictionaries representing the aligned triples.
+        Returns a new list of triples (text fields unchanged) whose ``info_unit``
+        is a canonical INFO_UNITS token. Triples that cannot be mapped at all are
+        dropped.
         """
-        if not raw_triples:
+        if not triples:
             return []
-            
-        import json
-        
-        prompt = f"""Align the following raw triples to the predefined schema.
 
-RAW TRIPLES:
-{json.dumps(raw_triples, indent=2)}
+        aligned: List[Dict] = []
+        unresolved: List[int] = []  # indices needing the LLM fallback
 
-Return ONLY a JSON array of the aligned triples."""
+        for i, t in enumerate(triples):
+            canonical = normalize_unit(t.get("info_unit", ""))
+            if canonical is None:
+                unresolved.append(i)
+            new_t = dict(t)
+            new_t["info_unit"] = canonical  # may be None; filled by fallback
+            aligned.append(new_t)
 
-        logger.info(f"SAA aligning {len(raw_triples)} raw triples...")
-        
-        # We use a very low temperature (0.0) for alignment to ensure strict 
-        # adherence to the allowed schema categories.
+        if unresolved:
+            self._resolve_with_llm(triples, aligned, unresolved)
+
+        # Drop anything still unmapped.
+        result = [t for t in aligned if t.get("info_unit") in INFO_UNITS]
+        dropped = len(aligned) - len(result)
+        logger.info(
+            f"SAA aligned {len(result)} triples to the NCG inventory"
+            + (f" (dropped {dropped} unmappable)" if dropped else "")
+        )
+        return result
+
+    def _resolve_with_llm(self, triples: List[Dict], aligned: List[Dict],
+                          unresolved: List[int]) -> None:
+        payload = [
+            {
+                "guess": triples[i].get("info_unit", ""),
+                "subject": triples[i].get("subject", ""),
+                "predicate": triples[i].get("predicate", ""),
+                "object": triples[i].get("object", ""),
+            }
+            for i in unresolved
+        ]
+
+        prompt = f"""Align each of these to one info unit token from the inventory.
+
+{json.dumps(payload, indent=2, ensure_ascii=False)}
+
+Return ONLY a JSON array of {{"info_unit": "<TOKEN>"}} in the same order."""
+
         response_text = self._make_llm_call(prompt, temperature=0.0)
-        
-        aligned_triples = self._parse_json_response(response_text)
-        
-        valid_aligned = []
-        for triple in aligned_triples:
-            if isinstance(triple, dict) and "head" in triple and "tail" in triple and "relation" in triple:
-                # Ensure fields exist
-                triple["source_id"] = triple.get("source_id", "unknown")
-                valid_aligned.append(triple)
-                
-        logger.info(f"SAA successfully aligned {len(valid_aligned)} triples.")
-        return valid_aligned
+        parsed = self._parse_json_response(response_text)
+
+        for slot, item in zip(unresolved, parsed):
+            if isinstance(item, dict):
+                canonical = normalize_unit(item.get("info_unit", ""))
+                aligned[slot]["info_unit"] = canonical

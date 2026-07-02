@@ -2,4 +2,7 @@
 .env
 __pycache__/
 *.pyc
-\n# macOS\n.DS_Store\n**/.DS_Store
+
+# macOS
+.DS_Store
+**/.DS_Store
