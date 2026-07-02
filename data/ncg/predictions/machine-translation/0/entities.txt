@@ -1,0 +1,23 @@
+2	64	95	Statistical Machine Translation
+4	35	84	neural network model called RNN Encoder - Decoder
+4	102	139	two recurrent neural networks ( RNN )
+6	69	150	maximize the conditional probability of a target sequence given a source sequence
+8	24	135	that the proposed model learns a semantically and syntactically meaningful representation of linguistic phrases
+16	108	187	two recurrent neural networks ( RNN ) that act as an encoder and a decoder pair
+18	40	123	maximize the conditional probability of the target sequence given a source sequence
+21	9	109	the model to learn the translation probability of an English phrase to a corresponding French phrase
+23	115	142	the translation performance
+25	31	132	that the RNN Encoder - Decoder is better at capturing the linguistic regularities in the phrase table
+26	42	196	that the RNN Encoder - Decoder learns a continuous space representation of a phrase that preserves both the semantic and syntactic structure of the phrase
+208	33	60	neural network architecture
+208	73	94	RNN Encoder - Decoder
+208	111	244	learn the mapping from a sequence of an arbitrary length to another sequence , possibly from a different set , of an arbitrary length
+209	13	34	RNN Encoder - Decoder
+209	53	120	score a pair of sequences ( in terms of a conditional probability )
+209	124	174	generate a target sequence given a source sequence
+210	48	65	novel hidden unit
+210	80	111	a reset gate and an update gate
+210	136	220	how much each hidden unit remembers or forgets while reading / generating a sequence
+211	49	80	statistical machine translation
+212	37	123	that the new model is able to capture linguistic regularities in the phrase pairs well
+214	16	155	that the contribution by the RNN Encoder - Decoder is rather orthogonal to the existing approach of using neural networks in the SMT system

@@ -1,0 +1,4 @@
+(Contribution||has||Experiments)
+(Experiments||evaluates||the proposed RNN Encoder - Decoder with a novel hidden unit on the task of translating from English to French)
+(Experiments||trains||the model to learn the translation probability of an English phrase to a corresponding French phrase)
+(Experiments||evaluates||the approach on the English/French translation task of the WMT '14 workshop)

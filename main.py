@@ -4,7 +4,7 @@ import logging
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from karma_mini.core import KARMAPipeline
+from karma_mini.core.pipeline import KARMAPipeline
 
 # Load environment variables from .env file
 load_dotenv()
@@ -30,10 +30,16 @@ def main():
         help="Select the LLM model to query"
     )
     parser.add_argument(
-        "--data", 
-        type=str, 
-        default="data/abstracts.json",
-        help="Path to the JSON file containing abstracts"
+        "--data",
+        type=str,
+        default="data/ncg/trial-data",
+        help="Path to the NCG trial-data root (or a single paper folder)"
+    )
+    parser.add_argument(
+        "--out",
+        type=str,
+        default="data/ncg/predictions",
+        help="Directory to write prediction files (mirrors the gold layout)"
     )
     parser.add_argument(
         "--timeout",
@@ -47,10 +53,11 @@ def main():
     logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
     print("=" * 60)
-    print(" KARMA Mini Pipeline ".center(60, "="))
+    print(" KARMA Mini : NCG Contribution Graphs ".center(60, "="))
     print("=" * 60)
     print(f"Model    : {args.model}")
     print(f"Data     : {args.data}")
+    print(f"Out      : {args.out}")
     print(f"Timeout  : {args.timeout}s")
     print("-" * 60)
 
@@ -63,8 +70,8 @@ def main():
 
     try:
         pipeline = KARMAPipeline(client, args.model)
-        pipeline.process_abstracts(args.data)
-        
+        pipeline.process_papers(args.data, args.out)
+
     except Exception as e:
         print(f"\n[ERROR] Pipeline execution failed: {e}")
 

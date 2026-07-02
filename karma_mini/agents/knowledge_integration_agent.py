@@ -1,156 +1,141 @@
 """
-Knowledge Integration Agent (KIA) for KARMA Mini.
+Knowledge Integration Agent (KIA) for KARMA Mini — per-paper graph assembly.
 """
 
 import logging
 from typing import List, Dict
-import json
-from collections import defaultdict
 
 from karma_mini.core.base_agent import BaseAgent
-from karma_mini.core.data_structures import KnowledgeTriple, KGEntity, KnowledgeGraph
+from karma_mini.core.data_structures import (
+    KnowledgeTriple,
+    KnowledgeGraph,
+    IU_SPEC,
+    INFO_UNITS,
+    MANDATORY_UNITS,
+    MODEL_OR_APPROACH,
+    ROOT,
+)
 
 logger = logging.getLogger(__name__)
+
 
 class KnowledgeIntegrationAgent(BaseAgent):
     """
     Agent 3: Knowledge Integration Agent (KIA)
 
-    Role: Takes all aligned triples globally, merges duplicates, groups by
-    entity pairs, detects conflicts, and uses LLM-based reasoning to resolve
-    those conflicts before adding them to the final Knowledge Graph.
+    Role: assemble the per-paper rooted contribution graph. It adds the
+    structural ``(Contribution||has||<InfoUnit>)`` edges for every info
+    unit present, keeps the ``(term||predicate||term)`` edges, merges duplicate
+    phrase nodes (identical strings collapse to one node, creating a DAG),
+    de-duplicates identical triples, and groups the result by info unit.
     """
 
-    def __init__(self, client, model_name: str):
-        system_prompt = """You are a Knowledge Integration Agent (KIA) for a biomedical knowledge graph.
-Your task is to resolve conflicting relationships between two entities based on evidence from different sources.
+    def __init__(self, client=None, model_name: str = ""):
+        super().__init__(client, model_name, system_prompt="")
 
-You will be given:
-1. Entity A (Head)
-2. Entity B (Tail)
-3. A list of conflicting relations and the evidence sentences that produced them.
+    def process(self, aligned_triples: List[Dict], paper_id: str = "") -> KnowledgeGraph:
+        kg = KnowledgeGraph(paper_id=paper_id)
 
-GUIDELINES for Resolution:
-1. CONTEXTUAL SPLIT: If both are true but in different contexts (e.g., high dose vs low dose, or mouse vs human), keep BOTH relationships but append a brief context note to the relation type (e.g., "ACTIVATES (in vitro)").
-2. GENERALIZATION: If the specific interactions contradict but both indicate interaction, generalize them to a safer relation like "REGULATES" or "INTERACTS_WITH".
-3. OVERRULE: If one evidence is clearly a strong finding and the other is a weak hypothesis or negated, pick the strong one.
-
-CONFIDENCE SCORING (0.0 to 1.0):
-- 0.9 - 1.0: Very strong, explicit finding supported by clear, uncontradicted evidence.
-- 0.7 - 0.8: Strong finding but generalized from conflicting specifics, or highly contextual.
-- 0.5 - 0.6: Weak, implied relationship, or significant ambiguity remaining after resolution.
-
-OUTPUT FORMAT:
-Return ONLY a valid JSON array of the resolved relationships. Do not include markdown or explanations.
-[
-  {
-    "head": "Entity A",
-    "relation": "RESOLVED_RELATION",
-    "tail": "Entity B",
-    "confidence": 0.9,
-    "resolution_note": "Brief explanation of why this was chosen."
-  }
-]"""
-        super().__init__(client, model_name, system_prompt)
-
-    def process(self, aligned_triples: List[Dict]) -> KnowledgeGraph:
-        """
-        Processes aligned triples to build the final Knowledge Graph.
-
-        Args:
-            aligned_triples: List of dictionaries representing aligned triples.
-
-        Returns:
-            A KnowledgeGraph object ready for export.
-        """
-        kg = KnowledgeGraph()
-
-        # Group triples by head and tail (case-insensitive for basic merging)
-        grouped_triples = defaultdict(list)
+        # Bucket the canonicalized term-edges per info unit, preserving order
+        per_unit: Dict[str, List[KnowledgeTriple]] = {u: [] for u in INFO_UNITS}
 
         for t in aligned_triples:
-            # We use lowercase keys for grouping to merge "Aspirin" and "aspirin"
-            head_key = t.get("head", "").strip().lower()
-            tail_key = t.get("tail", "").strip().lower()
-            if head_key and tail_key:
-                pair_key = (head_key, tail_key)
-                grouped_triples[pair_key].append(t)
+            unit = t.get("info_unit")
+            if unit not in IU_SPEC:
+                continue
+            spec = IU_SPEC[unit]
+            edge = self._canonicalize(t, unit, spec)
+            if edge is not None:
+                per_unit[unit].append(edge)
 
-        logger.info(f"KIA grouped {len(aligned_triples)} triples into {len(grouped_triples)} unique entity pairs.")
+        # Assemble in canonical INFO_UNITS order: structural edge first,
+        # then the term edges of that unit.
+        for unit in INFO_UNITS:
+            edges = per_unit[unit]
+            if not edges:
+                continue
+            spec = IU_SPEC[unit]
+            if not spec.direct:
+                kg.add_triple(KnowledgeTriple(
+                    subject=ROOT,
+                    predicate="has",
+                    object=spec.node_label,
+                    info_unit=unit,
+                    source_line=-1,
+                    source_paper=paper_id,
+                    evidence="",
+                ))
+            for edge in edges:
+                kg.add_triple(edge)
 
-        for (head_key, tail_key), triples in grouped_triples.items():
-            # Check if there are multiple DIFFERENT relations for this pair
-            relations = list(set([t.get("relation") for t in triples]))
-
-            # Create standard entity objects (using the first occurrence's casing and type)
-            head_ent = KGEntity(
-                entity_id=head_key,
-                name=triples[0].get("head"),
-                entity_type=triples[0].get("head_type", "OTHER")
-            )
-            tail_ent = KGEntity(
-                entity_id=tail_key,
-                name=triples[0].get("tail"),
-                entity_type=triples[0].get("tail_type", "OTHER")
-            )
-
-            kg.add_entity(head_ent)
-            kg.add_entity(tail_ent)
-
-            if len(relations) == 1:
-                # No conflict! Merge them.
-                # Confidence could be based on the number of sources (e.g., 1 source = 0.5, 2 = 0.7, 3+ = 0.9)
-                confidence = min(0.5 + (len(triples) - 1) * 0.2, 0.95)
-                sources = ", ".join(list(set([t.get("source_id") for t in triples])))
-
-                triple_obj = KnowledgeTriple(
-                    head=head_ent.entity_id,
-                    relation=relations[0],
-                    tail=tail_ent.entity_id,
-                    confidence=confidence,
-                    source=sources
-                )
-                kg.add_triple(triple_obj)
-            else:
-                # Conflict detected! Ask the LLM to resolve it.
-                logger.info(f"KIA resolving conflict for {head_ent.name} -> {tail_ent.name} ({relations})")
-                resolved_triples = self._resolve_conflict(head_ent.name, tail_ent.name, triples)
-
-                for rt in resolved_triples:
-                    sources = ", ".join(list(set([t.get("source_id") for t in triples])))
-                    triple_obj = KnowledgeTriple(
-                        head=head_ent.entity_id,
-                        relation=rt.get("relation", "INTERACTS_WITH"),
-                        tail=tail_ent.entity_id,
-                        confidence=float(rt.get("confidence", 0.5)),
-                        source=f"Resolved from: {sources}"
-                    )
-                    kg.add_triple(triple_obj)
-
+        self._report_mandatory(kg, paper_id)
         return kg
 
-    def _resolve_conflict(self, head_name: str, tail_name: str, conflicting_triples: List[Dict]) -> List[Dict]:
-        """Ask LLM to resolve a conflict between multiple triples for the same entity pair."""
+    def _canonicalize(self, t: Dict, unit: str, spec) -> KnowledgeTriple:
+        """Turn a raw aligned triple into a canonical KnowledgeTriple.
 
-        evidence_list = []
-        for t in conflicting_triples:
-            evidence_list.append({
-                "relation": t.get("relation"),
-                "evidence": t.get("evidence"),
-                "source": t.get("source_id")
-            })
+        Snaps the info-unit node label to its canonical casing, and rewrites the
+        root edge of the two "direct" units (RESEARCHPROBLEM, CODE) so that the
+        term attaches to ``Contribution`` with the correct predicate
+        """
+        subject = str(t.get("subject", "")).strip()
+        predicate = str(t.get("predicate", "")).strip()
+        obj = str(t.get("object", "")).strip()
+        line = t.get("from_line", -1)
+        try:
+            line = int(line)
+        except (TypeError, ValueError):
+            line = -1
+        evidence = str(t.get("evidence", ""))
 
-        prompt = f"""Resolve the relationship conflict between '{head_name}' and '{tail_name}'.
+        if spec.direct:
+            # RESEARCHPROBLEM / CODE: (Contribution || <root_pred> || term)
+            term = self._pick_term(subject, obj, spec)
+            return KnowledgeTriple(
+                subject=ROOT,
+                predicate=spec.root_pred,
+                object=term,
+                info_unit=unit,
+                source_line=line,
+                source_paper=t.get("source_paper", ""),
+                evidence=evidence,
+            )
 
-CONFLICTING EVIDENCE:
-{json.dumps(evidence_list, indent=2)}
+        # Normal unit: keep text verbatim, only snap node-label casing.
+        subject = self._snap_label(subject, spec.node_label)
+        obj = self._snap_label(obj, spec.node_label)
+        return KnowledgeTriple(
+            subject=subject,
+            predicate=predicate,
+            object=obj,
+            info_unit=unit,
+            source_line=line,
+            source_paper=t.get("source_paper", ""),
+            evidence=evidence,
+        )
 
-Determine the final relationship(s) and return ONLY the JSON array."""
+    @staticmethod
+    def _pick_term(subject: str, obj: str, spec) -> str:
+        """Choose the phrase that is the actual term for a direct-unit edge."""
+        structural = {ROOT.lower(), spec.node_label.lower(), "research problem"}
+        # Prefer the object; fall back to subject if the object is structural.
+        if obj and obj.lower() not in structural:
+            return obj
+        if subject and subject.lower() not in structural:
+            return subject
+        return obj or subject
 
-        response_text = self._make_llm_call(prompt, temperature=0.1)
-        resolved = self._parse_json_response(response_text)
+    @staticmethod
+    def _snap_label(text: str, node_label: str) -> str:
+        """Normalize casing of an info-unit node label so it merges with the backbone."""
+        if text.strip().lower() == node_label.lower():
+            return node_label
+        return text
 
-        # Ensure it returns something valid even if it fails
-        if not resolved:
-            return [{"head": head_name, "relation": "INTERACTS_WITH", "tail": tail_name, "confidence": 0.4}]
-        return resolved
+    def _report_mandatory(self, kg: KnowledgeGraph, paper_id: str) -> None:
+        present = set(kg.group_by_info_unit().keys())
+        missing = [u for u in MANDATORY_UNITS if u not in present]
+        if not (present & set(MODEL_OR_APPROACH)):
+            missing.append("MODEL/APPROACH")
+        if missing:
+            logger.warning(f"[{paper_id}] missing mandatory info unit(s): {', '.join(missing)}")

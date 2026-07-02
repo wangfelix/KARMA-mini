@@ -1,60 +1,138 @@
-# KARMA Mini: Automated Knowledge Graph Extraction
+# KARMA Mini: NLPContributionGraph Extraction (SemEval-2021 Task 11)
 
-KARMA Mini is a streamlined, 3-agent natural language processing framework designed to automatically extract, standardize, and integrate biomedical knowledge from raw text abstracts into a structured Knowledge Graph. 
+KARMA Mini is a streamlined, 3-agent LLM pipeline that extracts a paper's
+**contribution knowledge graph** for the SemEval-2021 Task 11
+[NLPContributionGraph (NCG)](https://ncg-task.github.io/) shared task.
 
-This project is a simplified reproduction of the original [KARMA architecture](https://github.com/YuxingLu613/KARMA), optimized for batch processing of short texts (like paper abstracts) and specifically designed to export data seamlessly into **Neo4j**.
+Each scholarly NLP paper is processed **independently** and yields its own graph
+rooted at a single node literally named `Contribution`. Graphs are never merged
+across papers. This is a simplified, NCG-focused reproduction of the
+[KARMA architecture](https://github.com/YuxingLu613/KARMA).
+
+## What it produces
+
+For every paper, a rooted multi-way tree / DAG of triples:
+
+```
+(Contribution || has research problem || Statistical Machine Translation)
+(Contribution || has || Model)
+(Model || has || neural network architecture)
+(neural network architecture || refer to as || RNN Encoder - Decoder)
+(Contribution || has || Results)
+(Results || improves the performance || adding features)
+```
+
+- **Predicates are free text** taken verbatim from the sentence wording (plus the
+  structural `has`). They are never mapped to a fixed vocabulary.
+- **Phrases are exact Stanza tokens**, copied verbatim from the input so they can
+  string-match the gold annotations (e.g. `phrase - based SMT`,
+  `two recurrent neural networks ( RNN )`).
+- Two info units attach **directly** to the root: `research-problem`
+  (`Contribution || has research problem || <term>`) and `code`
+  (`Contribution || Code || <url>`). All others get an intermediate node
+  (`Model`, `Results`, `Experimental setup`, …).
+
+### The fixed 12 information units
+
+`RESEARCHPROBLEM, APPROACH, MODEL, CODE, DATASET, EXPERIMENTALSETUP,
+HYPERPARAMETERS, BASELINES, RESULTS, TASKS, EXPERIMENTS, ABLATIONANALYSIS`
+
+Mandatory per paper: `RESEARCHPROBLEM`, `RESULTS`, and at least one of
+`MODEL` / `APPROACH`. Normalization: `method`/`application` → `APPROACH`;
+`system`/`architecture` → `MODEL`; `EXPERIMENTALSETUP` only when hardware is
+mentioned, otherwise `HYPERPARAMETERS`.
 
 ## The 3-Agent Architecture
 
-The pipeline is driven by three specialized Large Language Model (LLM) agents working in sequence:
+The pipeline (`karma_mini/core/pipeline.py`) runs three agents **per paper**:
 
-### 1. Information Extraction Agent (IEA)
-**Role:** Reader. It ingests the raw text of an abstract and extracts key biomedical entities (e.g., Diseases, Drugs, Genes) and the explicit relationships between them.
-*   **Input:** Raw abstract text.
-*   **Output:** Raw Triples (e.g., `["Aspirin", "lowers", "Headache"]`) along with the source text evidence.
+### 1. Information Extraction Agent (IEA) — *contribution extraction*
+`karma_mini/agents/information_extraction_agent.py`
 
-### 2. Schema Alignment Agent (SAA)
-**Role:** Standardizer. It takes the raw, messy triples and maps them to a strict, predefined vocabulary (ontology). This ensures that different ways of saying the same thing (e.g., "reduces", "lowers", "decreases") are grouped under a single relationship type (e.g., `INHIBITS`).
-*   **Input:** Raw Triples.
-*   **Output:** Aligned Triples (e.g., `["Aspirin", "INHIBITS", "Headache"]`).
+Reads the **whole paper** as numbered Stanza sentences (one per line,
+1-indexed). It first identifies the handful of **contribution sentences** (what
+*this* paper contributes — research problem, model/approach, results, datasets,
+code, baselines, usually in the title, abstract, intro, and the opening of the
+model/results sections), then emits `(subject, predicate, object)` triples drawn
+**only** from those sentences using the exact tokenized phrases, each tagged with
+a best-guess info unit and its source line number.
 
-### 3. Knowledge Integration Agent (KIA)
-**Role:** Conflict Resolution and Synthesizer. After processing all abstracts, this agent reviews the global list of aligned triples. It merges duplicates, aggregates confidence scores, and crucially, resolves logical conflicts (e.g., Paper A says X inhibits Y, but Paper B says X activates Y) using LLM-based reasoning.
-*   **Input:** Global list of Aligned Triples.
-*   **Output:** The final, conflict-free Knowledge Graph.
+### 2. Schema Alignment Agent (SAA) — *info-unit alignment*
+`karma_mini/agents/schema_alignment_agent.py`
 
-## Tech Stack & Neo4j Integration
-*   **LLM Provider:** Uses the `openai` Python client configured for the KIT API toolbox.
-*   **Export:** The data structures are designed to export directly into `nodes.csv` and `relationships.csv`, optimized for `LOAD CSV` operations in Neo4j.
+Aligns each triple's `info_unit` to the fixed 12-unit inventory, applying the
+normalization rules. The subject/predicate/object text is left **untouched**.
+Mostly deterministic (a rule table); the LLM is a temperature-0.0 fallback only
+for borderline labels.
+
+### 3. Knowledge Integration Agent (KIA) — *per-paper graph assembly*
+`karma_mini/agents/knowledge_integration_agent.py`
+
+Assembles the rooted graph: adds the `(Contribution || has || <InfoUnit>)`
+backbone edges, special-cases the two direct units, keeps the term→term edges,
+**merges duplicate phrase nodes** (identical strings collapse into one node,
+creating the DAG), de-duplicates identical triples, and groups by info unit.
+Fully deterministic Python.
+
+## Input data
+
+NCG trial data lives under `data/ncg/trial-data/<task>/<n>/`. The canonical input
+is `<id>-Stanza-out.txt` (tokenized, one sentence per line, 1-indexed). The
+loader (`karma_mini/loader.py`) reads it and attaches simple section hints from
+the standalone header lines Stanza preserves (`title`, `abstract`,
+`Introduction`, …). **No OCR is performed** — the dataset ships plaintext.
 
 ## Setup & Usage
 
-1.  **Install Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-2.  **Environment Variables:**
-    Create a `.env` file in the root directory:
-    ```env
-    KIT_API_KEY=your_actual_api_key_here
-    KIT_BASE_URL=https://ki-toolbox.scc.kit.edu/api/v1
-    ```
+2. **Environment variables** (`.env` in the project root):
+   ```env
+   KIT_API_KEY=your_actual_api_key_here
+   KIT_BASE_URL=https://ki-toolbox.scc.kit.edu/api/v1
+   ```
 
-3.  **Run Pipeline:**
-    Execute the main pipeline script. You can specify the model, input data, and timeout. By default, it processes `data/abstracts.json` using the `kit.mistral-small-4-119b-a8b` model.
-    ```bash
-    python main.py
-    ```
+3. **Run the pipeline** over the whole trial set (writes predictions mirroring
+   the gold folder layout):
+   ```bash
+   python main.py --data data/ncg/trial-data --out data/ncg/predictions
+   ```
+   Run on a single paper folder (handy for inspection):
+   ```bash
+   python main.py --data data/ncg/trial-data/machine-translation/0
+   ```
+   Pick a model (`--model`) and request timeout (`--timeout`) as needed:
+   ```bash
+   python main.py --model kit.gpt-oss-120b --timeout 120
+   ```
 
-    You can also provide custom arguments:
-    ```bash
-    python main.py --model kit.gemma4-31b-it --data path/to/your/data.json --timeout 120.0
-    ```
+   Predictions are written to `data/ncg/predictions/<task>/<n>/`:
+   ```
+   triples/<iu>.txt   # "(subject||predicate||object)" per line
+   sentences.txt      # contribution sentence line numbers
+   entities.txt       # "<line>\t<start>\t<end>\t<phrase>"
+   ```
 
-4.  **Visualize Output:**
-    After running the pipeline, a final knowledge graph JSON will be generated in `data/output/`. You can visualize the results using the `visualize.py` script:
-    ```bash
-    python visualize.py
-    ```
-    This will generate an interactive HTML graph at `data/output/graph.html` which you can open in your web browser.
+## Evaluation
+
+Scoring uses the **official** SemEval-2021 Task 11 scorer. Clone it once into
+`scoring/` (gitignored):
+
+```bash
+git clone https://github.com/ncg-task/scoring-program.git scoring
+```
+
+Then score the predictions against the gold trial data:
+
+```bash
+python eval_ncg.py --gold data/ncg/trial-data --pred data/ncg/predictions
+```
+
+`eval_ncg.py` reuses the official `evaluate()` matching logic and prints
+precision / recall / F1 for **sentences**, **phrases**, **info units**, and
+**triples**, plus a per-info-unit triple breakdown. (The official scorer imports
+`scipy`/`numpy` it never uses; `eval_ncg.py` stubs them so no heavy deps are
+required.)
