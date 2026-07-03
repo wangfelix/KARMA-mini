@@ -1,23 +1,65 @@
 2	64	95	Statistical Machine Translation
-4	35	84	neural network model called RNN Encoder - Decoder
+4	35	55	neural network model
+4	63	84	RNN Encoder - Decoder
+4	90	101	consists of
 4	102	139	two recurrent neural networks ( RNN )
-6	69	150	maximize the conditional probability of a target sequence given a source sequence
-8	24	135	that the proposed model learns a semantically and syntactically meaningful representation of linguistic phrases
-16	108	187	two recurrent neural networks ( RNN ) that act as an encoder and a decoder pair
-18	40	123	maximize the conditional probability of the target sequence given a source sequence
-21	9	109	the model to learn the translation probability of an English phrase to a corresponding French phrase
+5	4	7	RNN
+5	95	102	decodes
+5	103	154	the representation into another sequence of symbols
+6	4	11	encoder
+6	4	23	encoder and decoder
+6	12	15	and
+6	16	23	decoder
+6	46	49	are
+6	50	65	jointly trained
+6	69	77	maximize
+6	78	150	the conditional probability of a target sequence given a source sequence
+7	0	59	The performance of a statistical machine translation system
+7	60	100	is empirically found to improve by using
+7	101	244	the conditional probabilities of phrase pairs computed by the RNN Encoder - Decoder as an additional feature in the existing log - linear model
+7	147	158	computed by
+7	163	184	RNN Encoder - Decoder
+8	19	28	show that
+8	29	47	the proposed model
+8	29	135	the proposed model learns a semantically and syntactically meaningful representation of linguistic phrases
+8	48	54	learns
+8	55	135	a semantically and syntactically meaningful representation of linguistic phrases
+8	99	113	representation
+15	87	120	novel neural network architecture
+15	133	149	used as apart of
+15	167	192	phrase - based SMT system
+16	13	40	neural network architecture
+16	57	68	refer to as
+16	72	93	RNN Encoder - Decoder
+16	96	107	consists of
+16	108	145	two recurrent neural networks ( RNN )
+16	151	157	act as
+16	161	168	encoder
+16	175	182	decoder
+17	4	11	encoder
+17	12	16	maps
+17	17	52	a variable - length source sequence
+17	53	55	to
+17	56	79	a fixed - length vector
+17	90	97	decoder
+17	103	128	the vector representation
+17	137	172	a variable - length target sequence
+18	4	16	two networks
+18	17	28	are trained
+18	29	36	jointly
+18	37	48	to maximize
+18	49	123	the conditional probability of the target sequence given a source sequence
+19	56	67	hidden unit
+19	80	87	improve
+19	97	112	memory capacity
+19	121	137	ease of training
+20	75	87	evaluated on
+20	88	134	the task of translating from English to French
+21	22	109	learn the translation probability of an English phrase to a corresponding French phrase
+22	18	34	used as apart of
+22	37	71	standard phrase - based SMT system
+22	72	74	by
+22	75	119	scoring each phrase pair in the phrase table
+23	55	105	scoring phrase pairs with an RNN Encoder - Decoder
+23	106	114	improves
 23	115	142	the translation performance
-25	31	132	that the RNN Encoder - Decoder is better at capturing the linguistic regularities in the phrase table
-26	42	196	that the RNN Encoder - Decoder learns a continuous space representation of a phrase that preserves both the semantic and syntactic structure of the phrase
-208	33	60	neural network architecture
-208	73	94	RNN Encoder - Decoder
-208	111	244	learn the mapping from a sequence of an arbitrary length to another sequence , possibly from a different set , of an arbitrary length
-209	13	34	RNN Encoder - Decoder
-209	53	120	score a pair of sequences ( in terms of a conditional probability )
-209	124	174	generate a target sequence given a source sequence
-210	48	65	novel hidden unit
-210	80	111	a reset gate and an update gate
-210	136	220	how much each hidden unit remembers or forgets while reading / generating a sequence
-211	49	80	statistical machine translation
-212	37	123	that the new model is able to capture linguistic regularities in the phrase pairs well
-214	16	155	that the contribution by the RNN Encoder - Decoder is rather orthogonal to the existing approach of using neural networks in the SMT system

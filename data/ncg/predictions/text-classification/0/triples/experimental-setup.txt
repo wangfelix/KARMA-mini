@@ -1,0 +1,6 @@
+(Contribution||has||Experimental setup)
+(Experimental setup||has||input)
+(input||have number of features equal to||70)
+(input||due to||our character quantization method)
+(input||has||input feature length)
+(input feature length||is||1014)

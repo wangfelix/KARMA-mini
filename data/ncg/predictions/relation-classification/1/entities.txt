@@ -1,0 +1,53 @@
+2	0	42	Joint Extraction of Entities and Relations
+2	52	74	a Novel Tagging Scheme
+4	0	42	Joint extraction of entities and relations
+5	36	43	propose
+5	44	66	a novel tagging scheme
+5	72	83	can convert
+5	84	109	the joint extraction task
+5	110	112	to
+5	113	130	a tagging problem
+7	111	115	show
+7	121	146	the tagging based methods
+7	121	220	the tagging based methods are better than most of the existing pipelined and joint learning methods
+7	147	162	are better than
+7	163	220	most of the existing pipelined and joint learning methods
+8	65	93	achieves the best results on
+8	94	112	the public dataset
+27	32	54	extraction of triplets
+27	60	75	are composed of
+27	76	88	two entities
+27	93	105	one relation
+27	106	113	between
+27	114	132	these two entities
+29	30	37	propose
+29	38	54	a tagging scheme
+29	55	71	accompanied with
+29	72	96	the end - to - end model
+29	97	106	to settle
+29	107	119	this problem
+30	10	30	a kind of novel tags
+30	37	44	contain
+30	45	72	the information of entities
+30	77	104	the relationships they hold
+31	35	77	joint extraction of entities and relations
+31	85	101	transformed into
+31	102	119	a tagging problem
+31	104	119	tagging problem
+37	45	56	investigate
+37	57	110	different kinds of LSTM - based end - to - end models
+37	111	129	to jointly extract
+37	130	156	the entities and relations
+42	25	29	show
+42	35	79	our tagging scheme is effective in this task
+43	43	70	achieve the best results on
+43	71	89	the public dataset
+44	50	72	A novel tagging scheme
+44	73	87	is proposed to
+44	88	126	jointly extract entities and relations
+44	135	155	can easily transform
+44	156	198	the extraction problem into a tagging task
+45	39	44	study
+45	45	85	different kinds of end - to - end models
+45	86	95	to settle
+45	96	107	the problem

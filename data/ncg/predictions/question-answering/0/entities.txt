@@ -1,0 +1,78 @@
+2	0	63	Open Question Answering with Weakly Supervised Embedding Models
+7	36	52	radical approach
+7	53	55	of
+7	56	118	learning to map questions to vectorial feature representations
+7	65	67	to
+7	68	71	map
+7	72	81	questions
+7	85	118	vectorial feature representations
+8	0	38	By mapping answers into the same space
+8	39	97	one can query any knowledge base independent of its schema
+8	100	117	without requiring
+8	118	129	any grammar
+9	11	26	is trained with
+9	27	54	anew optimization procedure
+9	55	64	combining
+9	65	92	stochastic gradient descent
+9	93	104	followed by
+9	105	125	a fine - tuning step
+9	126	131	using
+9	132	152	the weak supervision
+9	136	152	weak supervision
+9	153	164	provided by
+9	165	227	blending automatically and collaboratively generated resources
+10	15	26	demonstrate
+10	27	99	that our model can capture meaningful signals from its noisy supervision
+10	100	110	leading to
+10	111	129	major improvements
+10	130	134	over
+10	135	142	paralex
+10	145	219	the only existing method able to be trained on similar weakly labeled data
+12	48	80	open - domain question answering
+23	27	47	take the approach of
+23	48	117	converting questions to ( uninterpretable ) vectorial representations
+23	124	131	require
+23	132	155	no pre-defined grammars
+23	172	181	can query
+23	182	214	any KB independent of its schema
+31	13	24	is based on
+31	25	78	learning low - dimensional vector embeddings of words
+31	97	104	so that
+31	105	203	representations of questions and corresponding answers end up being similar in the embedding space
+34	29	34	model
+34	38	63	able to take advantage of
+34	64	94	noisy and indirect supervision
+34	95	97	by
+34	98	189	( i ) automatically generating questions from KB triples and treating this as training data
+36	20	31	outperforms
+36	32	48	previous results
+36	49	51	on
+36	52	96	the WikiAnswers + ReVerb evaluation data set
+36	97	110	introduced by
+36	111	112	.
+38	20	26	method
+38	30	41	fine - tune
+38	42	66	embedding - based models
+38	80	90	optimizing
+38	91	99	a matrix
+38	93	99	matrix
+38	100	114	parameterizing
+38	115	157	the similarity used in the embedding space
+38	160	170	leading to
+38	171	210	a consistent improvement in performance
+56	52	75	embedding - based model
+56	76	79	for
+56	80	98	question answering
+56	112	125	trained under
+56	135	152	cheap supervision
+62	19	25	follow
+62	26	61	the question answering framework of
+62	66	69	use
+62	70	83	the same data
+65	9	30	considers the task of
+65	31	49	question answering
+65	31	135	question answering as in : given a question q , the corresponding answer is given by a triplet from a KB
+69	10	21	consists in
+69	22	47	learning a function S ( )
+69	50	59	which can
+69	60	103	score questionanswer triple pairs ( q , t )

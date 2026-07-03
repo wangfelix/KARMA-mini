@@ -1,0 +1,104 @@
+2	0	41	Neural Machine Translation in Linear Time
+4	0	2	We
+4	3	10	present
+4	19	33	neural network
+4	34	37	for
+4	38	58	processing sequences
+5	4	11	ByteNet
+5	12	14	is
+5	17	20	one
+5	17	61	one-dimensional convolutional neural network
+5	70	81	composed of
+5	82	91	two parts
+5	101	127	encode the source sequence
+5	136	141	other
+5	145	171	decode the target sequence
+7	67	76	introduce
+7	77	99	an efficient mechanism
+7	100	108	by which
+7	109	120	the decoder
+7	109	183	the decoder is dynamically unfolded over the representation of the encoder
+7	121	123	is
+7	124	144	dynamically unfolded
+7	145	149	over
+7	150	183	the representation of the encoder
+8	4	11	ByteNet
+8	12	16	uses
+8	17	25	dilation
+8	26	28	in
+8	29	53	the convolutional layers
+8	54	56	to
+8	57	85	increase its receptive field
+9	26	45	two core properties
+9	51	58	runs in
+9	59	63	time
+9	72	81	linear in
+9	82	109	the length of the sequences
+9	117	126	sidesteps
+9	127	162	the need for excessive memorization
+10	20	27	attains
+10	28	62	state - of - the - art performance
+10	63	65	on
+10	66	102	character - level language modelling
+10	107	118	outperforms
+10	119	144	the previous best results
+10	145	158	obtained with
+10	159	177	recurrent networks
+11	17	25	achieves
+11	26	60	state - of - the - art performance
+11	61	63	on
+11	64	110	character - to - character machine translation
+11	114	160	the English - to - German WMT translation task
+11	163	173	surpassing
+11	174	210	comparable neural translation models
+11	220	228	based on
+11	229	247	recurrent networks
+11	248	252	with
+11	253	272	attentional pooling
+11	277	283	run in
+11	284	298	quadratic time
+28	13	56	family of encoder - decoder neural networks
+28	62	82	are characterized by
+28	83	111	two architectural mechanisms
+28	112	120	aimed to
+28	121	173	address the drawbacks of the conventional approaches
+28	150	173	conventional approaches
+28	174	189	mentioned above
+28	190	191	.
+29	20	28	involves
+29	29	100	the stacking of the decoder on top of the representation of the encoder
+29	118	127	preserves
+29	128	168	the temporal resolution of the sequences
+29	176	195	is in contrast with
+29	196	267	architectures that encode the source into a fixed - size representation
+30	28	55	dynamic unfolding mechanism
+30	61	67	allows
+30	68	169	the network to process in a simple and efficient way source and target sequences of different lengths
+31	4	11	ByteNet
+31	12	34	is the instance within
+31	40	56	family of models
+31	47	49	of
+31	62	66	uses
+31	67	122	one - dimensional convolutional neural networks ( CNN )
+31	126	137	fixed depth
+31	138	141	for
+31	142	174	both the encoder and the decoder
+32	13	16	use
+32	17	47	increasing factors of dilation
+32	51	58	rapidly
+32	59	63	grow
+32	64	84	the receptive fields
+32	87	106	a similar technique
+32	107	119	is also used
+32	123	124	.
+35	53	65	running time
+35	71	83	is linear in
+35	84	129	the length of the source and target sequences
+35	132	148	up to a constant
+35	149	150	c
+42	3	11	evaluate
+42	12	31	the decoder network
+42	76	84	achieves
+42	89	123	state - of - the - art performance
+42	97	99	of
+42	127	148	1.31 bits / character

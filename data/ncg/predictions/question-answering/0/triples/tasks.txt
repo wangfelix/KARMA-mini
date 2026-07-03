@@ -1,0 +1,5 @@
+(Contribution||has||Tasks)
+(Tasks||follow||the question answering framework of)
+(the question answering framework of||use||the same data)
+(Tasks||has||question answering)
+(question answering||considers the task of||question answering as in : given a question q , the corresponding answer is given by a triplet from a KB)

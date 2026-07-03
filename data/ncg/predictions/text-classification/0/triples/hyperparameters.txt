@@ -1,0 +1,7 @@
+(Contribution||has||Hyperparameters)
+(Hyperparameters||has||stochastic gradient descent ( SGD ))
+(stochastic gradient descent ( SGD )||uses||minibatch of size 128)
+(stochastic gradient descent ( SGD )||uses||momentum 0.9)
+(stochastic gradient descent ( SGD )||uses||initial step size 0.01)
+(initial step size 0.01||halved every||3 epoches)
+(halved every 3 epoches||for||10 times)

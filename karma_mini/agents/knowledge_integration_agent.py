@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class KnowledgeIntegrationAgent(BaseAgent):
     """
-    Agent 3: Knowledge Integration Agent (KIA)
+    Agent 4: Knowledge Integration Agent (KIA)
 
     Role: assemble the per-paper rooted contribution graph. It adds the
     structural ``(Contribution||has||<InfoUnit>)`` edges for every info

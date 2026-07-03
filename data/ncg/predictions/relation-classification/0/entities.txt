@@ -1,0 +1,98 @@
+2	0	34	End - to - End Relation Extraction
+2	41	46	LSTMs
+2	50	79	Sequences and Tree Structures
+4	13	46	novel end - to - end neural model
+4	47	57	to extract
+4	58	66	entities
+4	67	70	and
+4	71	80	relations
+4	81	88	between
+4	89	93	them
+5	4	40	recurrent neural network based model
+5	41	49	captures
+5	50	113	both word sequence and dependency tree substructure information
+5	114	125	by stacking
+5	126	166	bidirectional treestructured LSTM - RNNs
+5	167	169	on
+5	170	206	bidirectional sequential LSTM - RNNs
+6	5	11	allows
+6	12	21	our model
+6	25	42	jointly represent
+6	43	70	both entities and relations
+6	76	93	shared parameters
+6	94	96	in
+6	99	111	single model
+7	21	58	detection of entities during training
+7	63	111	use of entity information in relation extraction
+7	112	115	via
+7	116	134	entity pretraining
+7	139	157	scheduled sampling
+8	10	23	improves over
+8	28	69	stateof - the - art feature - based model
+8	70	72	on
+8	73	103	end -toend relation extraction
+8	106	115	achieving
+8	116	169	12.1 % and 5.7 % relative error reductions in F1score
+8	173	180	ACE2005
+8	185	192	ACE2004
+9	18	44	our LSTM - RNN based model
+9	45	53	compares
+9	45	66	compares favorably to
+9	71	109	state - of - the - art CNN based model
+9	110	111	(
+9	126	128	on
+9	129	160	nominal relation classification
+9	163	185	Sem Eval - 2010 Task 8
+10	13	20	present
+10	24	51	extensive ablation analysis
+10	52	54	of
+10	55	79	several model components
+27	13	39	novel end - to - end model
+27	40	50	to extract
+27	51	60	relations
+27	61	68	between
+27	69	77	entities
+27	78	80	on
+27	81	130	both word sequence and dependency tree structures
+28	10	16	allows
+28	17	75	joint modeling of entities and relations in a single model
+28	90	237	bidirectional sequential ( left - to - right and right - to - left ) and bidirectional tree - structured ( bottom - up and top - down ) LSTM - RNNs
+29	0	9	Our model
+29	10	23	first detects
+29	24	32	entities
+29	42	50	extracts
+29	51	60	relations
+29	61	68	between
+29	69	90	the detected entities
+29	91	96	using
+29	97	142	a single incrementally - decoded NN structure
+29	145	192	and the NN parameters are jointly updated using
+29	193	224	both entity and relation labels
+30	75	84	our model
+30	93	105	incorporates
+30	106	122	two enhancements
+30	139	157	entity pretraining
+30	160	165	which
+30	166	192	pretrains the entity model
+30	199	217	scheduled sampling
+30	226	308	replaces ( unreliable ) predicted labels with gold labels in a certain probability
+32	43	55	improve over
+32	60	104	state - of - the - art feature - based model
+32	107	111	with
+32	112	190	12.1 % ( ACE2005 ) and 5.7 % ( ACE2004 ) relative error reductions in F1-score
+33	0	2	On
+33	3	61	nominal relation classification ( Sem Eval - 2010 Task 8 )
+33	74	95	compares favorably to
+33	100	137	state - of - the - art CNNbased model
+33	138	140	in
+33	141	149	F1-score
+34	88	100	key findings
+34	132	137	about
+34	142	154	contribution
+34	159	172	effectiveness
+34	173	175	of
+34	176	200	different RNN structures
+34	203	239	input dependency relation structures
+34	242	266	different parsing models
+34	269	287	external resources
+34	294	317	joint learning settings

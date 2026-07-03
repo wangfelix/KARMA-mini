@@ -1,0 +1,69 @@
+2	32	51	Text Categorization
+5	16	51	special case of a general framework
+5	34	51	general framework
+5	75	87	linear model
+5	95	123	non-linear feature generator
+5	124	137	consisting of
+5	138	173	' text region embedding + pooling '
+6	55	78	region embedding method
+6	79	84	using
+6	85	118	Long Short - Term Memory ( LSTM )
+8	8	43	effective and efficient use of LSTM
+8	44	47	for
+8	48	60	this purpose
+8	61	63	in
+8	83	107	semi-supervised settings
+8	88	107	supervised settings
+9	22	33	obtained by
+9	34	61	combining region embeddings
+9	62	76	in the form of
+9	77	104	LSTM and convolution layers
+9	105	115	trained on
+9	116	130	unlabeled data
+11	3	9	report
+11	10	22	performances
+11	23	32	exceeding
+11	37	58	previous best results
+11	59	61	on
+11	62	85	four benchmark datasets
+31	18	26	build on
+31	31	48	general framework
+31	49	51	of
+31	52	82	' region embedding + pooling '
+31	54	70	region embedding
+31	87	94	explore
+31	133	136	via
+31	137	170	Long Short - Term Memory ( LSTM )
+31	173	183	seeking to
+31	184	209	overcome the shortcomings
+31	218	220	in
+31	240	264	semi-supervised settings
+31	245	264	supervised settings
+40	64	72	leads to
+40	73	88	higher accuracy
+40	93	108	faster training
+40	109	113	than
+40	114	127	previous LSTM
+41	9	17	accuracy
+41	33	44	improved by
+41	45	77	training LSTMs on unlabeled data
+41	78	81	for
+41	82	115	learning useful region embeddings
+41	116	158	and using them to produce additional input
+42	56	66	outperform
+42	67	80	other methods
+42	81	90	including
+42	91	104	previous LSTM
+43	17	32	are obtained by
+43	33	119	combining the two types of region embeddings ( LSTM embed - dings and CNN embeddings )
+43	120	130	trained on
+43	131	145	unlabeled data
+43	148	163	indicating that
+43	164	197	their strengths are complementary
+46	51	90	http://riejohnson.com/cnn download.html
+77	24	54	' region embedding + pooling '
+77	55	58	for
+77	59	78	text categorization
+77	89	124	effective and efficient use of LSTM
+77	125	127	as
+77	131	166	alternative region embedding method

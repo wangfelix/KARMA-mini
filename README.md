@@ -1,6 +1,6 @@
 # KARMA Mini: NLPContributionGraph Extraction (SemEval-2021 Task 11)
 
-KARMA Mini is a streamlined, 3-agent LLM pipeline that extracts a paper's
+KARMA Mini is a streamlined, 4-agent LLM pipeline that extracts a paper's
 **contribution knowledge graph** for the SemEval-2021 Task 11
 [NLPContributionGraph (NCG)](https://ncg-task.github.io/) shared task.
 
@@ -42,30 +42,43 @@ Mandatory per paper: `RESEARCHPROBLEM`, `RESULTS`, and at least one of
 `system`/`architecture` → `MODEL`; `EXPERIMENTALSETUP` only when hardware is
 mentioned, otherwise `HYPERPARAMETERS`.
 
-## The 3-Agent Architecture
+## The 4-Agent Architecture
 
-The pipeline (`karma_mini/core/pipeline.py`) runs three agents **per paper**:
+The pipeline (`karma_mini/core/pipeline.py`) runs four agents **per paper**,
+mirroring the task's own granularities (sentences → phrases → triples):
 
-### 1. Information Extraction Agent (IEA) — *contribution extraction*
-`karma_mini/agents/information_extraction_agent.py`
+### 1. Contribution Sentence Agent (CSA) — *sentence selection + IU tagging*
+`karma_mini/agents/contribution_sentence_agent.py`
 
-Reads the **whole paper** as numbered Stanza sentences (one per line,
-1-indexed). It first identifies the handful of **contribution sentences** (what
-*this* paper contributes — research problem, model/approach, results, datasets,
-code, baselines, usually in the title, abstract, intro, and the opening of the
-model/results sections), then emits `(subject, predicate, object)` triples drawn
-**only** from those sentences using the exact tokenized phrases, each tagged with
-a best-guess info unit and its source line number.
+Reads the **whole paper** as numbered Stanza sentences (one per line, 1-indexed)
+and selects the handful of **contribution sentences** (what *this* paper
+contributes — usually in the title, abstract, intro, and the opening of the
+model/results sections), tagging each with **exactly one** information unit.
+Deciding the unit once, at the sentence level, means every triple later drawn
+from a sentence lands in the same `triples/<iu>.txt` file — related edges can
+never scatter across files.
 
 ### 2. Schema Alignment Agent (SAA) — *info-unit alignment*
 `karma_mini/agents/schema_alignment_agent.py`
 
-Aligns each triple's `info_unit` to the fixed 12-unit inventory, applying the
-normalization rules. The subject/predicate/object text is left **untouched**.
-Mostly deterministic (a rule table); the LLM is a temperature-0.0 fallback only
-for borderline labels.
+Aligns each selected sentence's `info_unit` to the fixed 12-unit inventory,
+applying the official normalization rules. The sentence text is left
+**untouched**. Mostly deterministic (a rule table); the LLM is a
+temperature-0.0 fallback only for borderline labels.
 
-### 3. Knowledge Integration Agent (KIA) — *per-paper graph assembly*
+### 3. Triple Extraction Agent (TEA) — *per-sentence phrase + triple extraction*
+`karma_mini/agents/triple_extraction_agent.py`
+
+Given **one** contribution sentence and its aligned info unit, extracts the
+scientific-term and predicate phrases and wires them into
+`(subject, predicate, object)` triples. Working one sentence at a time keeps
+every phrase a **verbatim span** of that sentence; a deterministic
+snap-to-span pass (`karma_mini/core/spans.py`) repairs casing/spacing drift
+(e.g. `fixed-length` → `fixed - length`), and triples whose terms cannot be
+located are dropped. Nodes extracted from earlier sentences are offered back to
+the agent so later sentences can chain onto them (cross-sentence links).
+
+### 4. Knowledge Integration Agent (KIA) — *per-paper graph assembly*
 `karma_mini/agents/knowledge_integration_agent.py`
 
 Assembles the rooted graph: adds the `(Contribution || has || <InfoUnit>)`

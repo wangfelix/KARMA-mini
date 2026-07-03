@@ -1,0 +1,8 @@
+(Contribution||has||Baselines)
+(Baselines||has||traditional models)
+(traditional models||such as||bag of words)
+(traditional models||such as||n-grams)
+(traditional models||and||their TFIDF variants)
+(traditional models||and||deep learning models)
+(deep learning models||such as||word - based ConvNets)
+(deep learning models||and||recurrent neural networks)

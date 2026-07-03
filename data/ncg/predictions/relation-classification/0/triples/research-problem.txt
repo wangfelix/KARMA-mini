@@ -1,0 +1,3 @@
+(Contribution||has research problem||End - to - End Relation Extraction)
+(Contribution||has research problem||LSTMs)
+(Contribution||has research problem||Sequences and Tree Structures)

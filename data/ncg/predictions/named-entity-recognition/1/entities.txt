@@ -1,0 +1,93 @@
+2	25	49	Named Entity Recognition
+5	19	28	introduce
+5	29	57	two new neural architectures
+5	64	72	based on
+5	73	122	bidirectional LSTMs and conditional random fields
+5	144	174	constructs and labels segments
+5	183	210	transition - based approach
+5	211	222	inspired by
+5	223	245	shift - reduce parsers
+6	11	18	rely on
+6	19	57	two sources of information about words
+6	60	98	character - based word representations
+6	99	111	learned from
+6	116	133	supervised corpus
+6	138	171	unsupervised word representations
+6	185	204	unannotated corpora
+7	11	17	obtain
+7	18	52	state - of - the - art performance
+7	53	55	in
+7	56	59	NER
+7	63	77	four languages
+7	78	98	without resorting to
+7	99	132	any language - specific knowledge
+7	136	145	resources
+7	146	153	such as
+7	154	164	gazetteers
+17	27	47	neural architectures
+17	48	51	for
+17	52	55	NER
+17	61	64	use
+17	65	97	no language - specific resources
+17	110	159	beyond a small amount of supervised training data
+17	164	181	unlabeled corpora
+20	11	21	two models
+20	35	120	a bidirectional LSTM with a sequential conditional random layer above it ( LSTM - CRF
+20	37	55	bidirectional LSTM
+20	63	98	sequential conditional random layer
+20	140	311	anew model that constructs and labels chunks of input sentences using an algorithm inspired by transition - based parsing with states represented by stack LSTMs ( S - LSTM
+20	156	177	constructs and labels
+20	178	203	chunks of input sentences
+20	223	234	inspired by
+20	235	261	transition - based parsing
+20	267	288	states represented by
+20	289	311	stack LSTMs ( S - LSTM
+22	3	10	capture
+22	11	35	orthographic sensitivity
+22	45	88	character - based word representation model
+22	100	126	distributional sensitivity
+22	132	139	combine
+22	162	166	with
+22	167	197	distributional representations
+23	53	69	dropout training
+23	91	100	the model
+23	101	109	to learn
+23	110	143	to trust both sources of evidence
+24	0	53	Experiments in English , Dutch , German , and Spanish
+24	54	58	show
+24	79	85	obtain
+24	86	124	state - of - the - art NER performance
+24	125	129	with
+24	130	182	the LSTM - CRF model in Dutch , German , and Spanish
+24	189	236	very near the state - of - the - art in English
+24	237	244	without
+24	237	289	without any hand - engineered features or gazetteers
+24	245	275	any hand - engineered features
+24	279	289	gazetteers
+25	42	51	surpasses
+25	52	89	the best previously published results
+25	90	92	in
+25	93	110	several languages
+25	125	148	performs less well than
+25	149	169	the LSTM - CRF model
+28	34	48	LSTMs and CRFs
+28	65	92	hybrid tagging architecture
+34	0	43	Long Short - term Memory Networks ( LSTMs )
+34	54	65	designed to
+34	66	83	combat this issue
+34	87	100	incorporating
+34	101	116	a memory - cell
+46	5	35	forward and backward LSTM pair
+46	39	53	referred to as
+46	56	74	bidirectional LSTM
+54	23	49	modeling tagging decisions
+54	96	120	conditional random field
+70	0	63	The scores associated with each tagging decision for each token
+70	4	63	scores associated with each tagging decision for each token
+70	90	107	are defined to be
+70	108	202	the dot product between the embedding of a wordin - context computed with a bidirectional LSTM
+70	132	202	the embedding of a wordin - context computed with a bidirectional LSTM
+70	202	221	exactly the same as
+70	222	246	the POS tagging model of
+70	257	274	are combined with
+70	275	302	bigram compatibility scores

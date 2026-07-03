@@ -1,0 +1,3 @@
+(Contribution||has||Tasks)
+(Tasks||has||learn the translation probability of an English phrase to a corresponding French phrase)
+(learn the translation probability of an English phrase to a corresponding French phrase||is||the task of translating from English to French)
