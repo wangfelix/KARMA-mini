@@ -1,10 +1,9 @@
-"""
-Simple NLQ -> Cypher -> Neo4j -> natural-language-answer QA system 
+"""Simple NLQ -> Cypher -> Neo4j -> natural-language-answer QA system.
 
 
 
 Usage:
-    python qa_system.py --uri bolt://localhost:7687 --user neo4j --password kdseminar26ss
+    python -m graph_rag.qa_neo4j --uri bolt://localhost:7687 --user neo4j
 
     You are dropped into an interactive prompt:
       > which papers have contributed to LSTM

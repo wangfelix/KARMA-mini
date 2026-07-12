@@ -1,4 +1,4 @@
-# Graph RAG — Cypher Generation Skill
+# GraphRAG — Cypher Generation Skill
 
 This document teaches an LLM how to translate a natural-language question
 about the KARMA Mini contribution knowledge graph into a correct Cypher

@@ -1,6 +1,4 @@
-"""
-Load triple into a Neo4j graph database.
-"""
+"""Load KARMA Mini triples into a Neo4j graph database."""
 
 import argparse
 import os

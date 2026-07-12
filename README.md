@@ -4,6 +4,10 @@ KARMA Mini is a streamlined, 4-agent LLM pipeline that extracts a paper's
 **contribution knowledge graph** for the SemEval-2021 Task 11
 [NLPContributionGraph (NCG)](https://ncg-task.github.io/) shared task.
 
+The repo also contains a **plain-RAG baseline** over the same corpus
+(`rag.py`, `karma_mini/rag/`) for a GraphRAG-vs-RAG comparison — see
+[RAG baseline](#rag-baseline-graphrag-vs-rag) below.
+
 Each scholarly NLP paper is processed **independently** and yields its own graph
 rooted at a single node literally named `Contribution`. Graphs are never merged
 across papers. This is a simplified, NCG-focused reproduction of the
@@ -149,3 +153,66 @@ precision / recall / F1 for **sentences**, **phrases**, **info units**, and
 **triples**, plus a per-info-unit triple breakdown. (The official scorer imports
 `scipy`/`numpy` it never uses; `eval_ncg.py` stubs them so no heavy deps are
 required.)
+
+## RAG baseline (GraphRAG vs RAG)
+
+`rag.py` implements a standard retrieval-augmented generation pipeline over the
+**raw Stanza text** of the trial papers — the plain-RAG side of a
+GraphRAG-vs-RAG comparison (the GraphRAG side retrieves over the gold
+contribution triples of the same papers).
+
+Pipeline (per the classic RAG architecture):
+
+1. **Chunking** (`karma_mini/rag/corpus.py`): sliding windows of 4 Stanza
+   sentences, stride 2 (50% overlap), each carrying paper id, line range, and
+   nearest section header.
+2. **Embedding** (`karma_mini/rag/embedder.py`): `kit.qwen3-embedding-8b`
+   (4096-dim), L2-normalized, batched.
+3. **Hybrid retrieval** (`karma_mini/rag/retriever.py`): every chunk is scored
+   with **BM25** (pure-Python Okapi, `bm25.py`) and **embedding cosine
+   similarity**; both are min-max normalized over the collection and combined
+   as their **average** — the final ranking score.
+4. **Generation** (`karma_mini/rag/generator.py`): an LLM answers from the
+   retrieved excerpts only, citing sources as `[<task>/<n>:<lines>]`.
+
+Usage:
+
+```bash
+python rag.py index                          # one-time: chunk + embed the corpus
+python rag.py search "multi-head attention"  # retrieval only, shows BM25/cosine/combined
+python rag.py ask "What is the RNN Encoder - Decoder used for?"
+python rag.py ask "..." --model azure.gpt-4.1-mini -k 8   # any chat model on the endpoint
+```
+
+The index lives in `data/rag/` (gitignored; rebuild anytime with
+`python rag.py index`).
+
+## GraphRAG and comparison UI
+
+The Neo4j-backed GraphRAG implementation and its Streamlit interface live in
+`graph_rag/`:
+
+- `graph_rag/load_neo4j.py` loads extracted or gold contribution triples.
+- `graph_rag/qa_neo4j.py` translates questions to Cypher and summarizes the
+  graph results.
+- `graph_rag/app.py` runs GraphRAG and plain RAG for the same question and
+  displays both answers side by side, including their respective traces.
+
+Configure Neo4j in `.env` in addition to the KIT API variables:
+
+```env
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=your_password
+```
+
+Prepare both retrieval backends once, then launch the comparison UI:
+
+```bash
+python -m graph_rag.load_neo4j --predictions data/ncg/trial-data --clear
+python rag.py index
+streamlit run graph_rag/app.py
+```
+
+By default, the plain-RAG index is read from `data/rag/` and its top five
+passages are used. Override these with `RAG_INDEX_PATH` and `RAG_TOP_K`.

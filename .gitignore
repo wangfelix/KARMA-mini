@@ -6,3 +6,6 @@ __pycache__/
 # macOS
 .DS_Store
 **/.DS_Store
+
+# RAG index artifacts (rebuild with: python rag.py index)
+data/rag/
