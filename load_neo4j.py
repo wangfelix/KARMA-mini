@@ -1,30 +1,11 @@
 """
-Load KARMA Mini triple predictions into a Neo4j graph database.
-
-Reads:  data/ncg/predictions/<task>/<n>/triples/<info_unit>.txt
-        (each line: "(subject||predicate||object)")
-
-Usage:
-    pip install neo4j
-
-    # via CLI args
-    python load_triples_to_neo4j.py \
-        --predictions data/ncg/predictions \
-        --uri bolt://localhost:7687 \
-        --user neo4j --password yourpassword
-
-    # or via .env (NEO4J_URI / NEO4J_USER / NEO4J_PASSWORD)
-    python load_triples_to_neo4j.py --predictions data/ncg/predictions
-
-    # wipe everything first
-    python load_triples_to_neo4j.py --predictions data/ncg/predictions --clear
+Load triple into a Neo4j graph database.
 """
 
 import argparse
 import os
 import re
 from pathlib import Path
-
 from neo4j import GraphDatabase
 
 try:

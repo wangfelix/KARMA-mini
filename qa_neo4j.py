@@ -1,19 +1,10 @@
 """
 Simple NLQ -> Cypher -> Neo4j -> natural-language-answer QA system 
-Design notes (matches load_triples_to_neo4j.py):
-  - Nodes:      (:Entity {paper_id, name})   (:Paper {paper_id})
-  - Relations:  (:Entity)-[:SOME_TYPE {predicate_text, info_unit}]->(:Entity)
-                (:Paper)-[:HAS_ROOT]->(:Entity {name: "Contribution"})
-  - Graphs are per-paper, but cross-paper questions are answered by matching
-    on Entity.name across all paper_id's (fuzzy match, see below).
-  - Phrases are verbatim Stanza tokens, so the SAME concept may appear under
-    slightly different strings in different papers (e.g. "LSTM" vs
-    "an LSTM network"). The LLM is instructed to use case-insensitive
-    substring matching (toLower(...) CONTAINS toLower(...)) rather than
-    exact equality, unless the user's question clearly names an exact phrase.
+
+
 
 Usage:
-    python qa_system.py --uri bolt://localhost:7687 --user neo4j --password ...
+    python qa_system.py --uri bolt://localhost:7687 --user neo4j --password kdseminar26ss
 
     You are dropped into an interactive prompt:
       > which papers have contributed to LSTM
@@ -33,7 +24,11 @@ try:
 except ImportError:
     pass
 
-
+# ---------------------------------------------------------------------------
+# Same client setup as main.py: OpenAI-compatible client against the KIT
+# endpoint, same model roster, so this script and the extraction pipeline
+# share one config.
+# ---------------------------------------------------------------------------
 from openai import OpenAI
 
 AVAILABLE_MODELS = [
@@ -80,9 +75,10 @@ def call_llm(client, model_name, system_prompt, user_prompt, _retry=True):
     return content.strip()
 
 
+# ---------------------------------------------------------------------------
 # Schema introspection: give the LLM a live, accurate picture of the graph
 # instead of a hand-written (and possibly stale) description.
-
+# ---------------------------------------------------------------------------
 
 def get_schema_text(driver):
     with driver.session() as session:
@@ -152,14 +148,21 @@ e.paper_id, since e.paper_id only exists on structural nodes.
 """.strip()
 
 
-
+# ---------------------------------------------------------------------------
 # NLQ -> Cypher -> results -> natural language answer
+# ---------------------------------------------------------------------------
 
-
-def load_skill(path="skill.md"):
+def load_skill(path=None):
     """Load the Cypher-generation instructions from an external markdown
-    file so they can be edited without touching this script. Falls back to
-    a minimal built-in prompt if the file is missing."""
+    file so they can be edited without touching this script. Resolves the
+    default path relative to THIS script's own location (not the current
+    working directory), so it works no matter where the program is
+    launched from -- important once teammates run this on their own
+    machines. Falls back to a minimal built-in prompt if the file is
+    missing."""
+    if path is None:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.join(script_dir, "skill.md")
     try:
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
@@ -192,7 +195,7 @@ LSTM", say something like "Paper X uses an LSTM-based architecture, \
 specifically describing it as '<predicate_text wording>'." If multiple \
 papers or facts are involved, briefly note what's similar or different \
 between them instead of just concatenating them.
- 
+
 Ground rules that still apply:
 - Never state anything not directly supported by the provided results --
   no outside knowledge, no filling in gaps with assumptions.
@@ -281,15 +284,24 @@ def safe_run_cypher(driver, cypher):
 
 
 def answer_question(driver, client, model_name, schema_text, question):
+    """Returns a dict: {"answer": str, "cypher": str or None}.
+    "cypher" is the actual query that was executed (or None if the LLM
+    determined the question was out of scope and never ran a query at all)
+    -- this is what a UI should display in a traceability/verification
+    panel, instead of trying to scrape it back out of console print()
+    output (which is never part of the return value)."""
     known_info_units = get_known_info_units(driver)
 
     cypher = generate_cypher(client, model_name, schema_text, question)
     cypher = fix_info_unit_literals(cypher, known_info_units)
     print(f"[cypher] {cypher}")
 
-   
+    # The LLM sometimes ignores "return only Cypher" and instead explains in
+    # plain English that the question is out of scope (e.g. general trivia
+    # unrelated to the paper graph). Treat that explanation as the answer
+    # directly instead of trying to execute it as a query.
     if not looks_like_cypher(cypher):
-        return cypher
+        return {"answer": cypher, "cypher": None}
 
     records, err = safe_run_cypher(driver, cypher)
 
@@ -299,14 +311,16 @@ def answer_question(driver, client, model_name, schema_text, question):
         cypher = fix_info_unit_literals(cypher, known_info_units)
         print(f"[cypher retry] {cypher}")
         if not looks_like_cypher(cypher):
-            return cypher
+            return {"answer": cypher, "cypher": None}
         records, err = safe_run_cypher(driver, cypher)
         if err is not None:
             print(f"[retry also failed: {err}]")
-            return "No matching results found in the graph."
+            return {"answer": "No matching results found in the graph.", "cypher": cypher}
 
     if not records:
-       
+        # Query was valid but returned nothing -- likely too many/too strict
+        # AND conditions on a single node. Retry once with an explicit nudge
+        # to broaden the search instead of giving up immediately.
         print("[empty result, retrying with a broader query]")
         broaden_hint = (
             "Your previous query returned zero results:\n"
@@ -324,16 +338,17 @@ def answer_question(driver, client, model_name, schema_text, question):
         cypher = fix_info_unit_literals(cypher, known_info_units)
         print(f"[cypher broadened] {cypher}")
         if not looks_like_cypher(cypher):
-            return cypher
+            return {"answer": cypher, "cypher": None}
         records, err = safe_run_cypher(driver, cypher)
         if err is not None:
             print(f"[broadened query also failed: {err}]")
             records = []
     if not records:
-        return "No matching results found in the graph."
+        return {"answer": "No matching results found in the graph.", "cypher": cypher}
 
     prompt = f"Question: {question}\n\nCypher results:\n{records}\n\nAnswer:"
-    return call_llm(client, model_name, ANSWER_SYSTEM_PROMPT, prompt)
+    answer = call_llm(client, model_name, ANSWER_SYSTEM_PROMPT, prompt)
+    return {"answer": answer, "cypher": cypher}
 
 
 def main():
@@ -371,7 +386,8 @@ def main():
                 break
             if not question:
                 continue
-            print(answer_question(driver, client, args.model, schema_text, question))
+            result = answer_question(driver, client, args.model, schema_text, question)
+            print(result["answer"])
             print()
     finally:
         driver.close()

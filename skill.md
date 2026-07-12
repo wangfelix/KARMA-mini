@@ -1,8 +1,8 @@
-# KARMA Graph QA — Cypher Generation Skill
+# Graph RAG — Cypher Generation Skill
 
 This document teaches an LLM how to translate a natural-language question
 about the KARMA Mini contribution knowledge graph into a correct Cypher
-query. It is loaded verbatim into the system prompt before every query.
+query. It is loaded verbatim into RAGthe system prompt before every query.
 
 ## Graph structure
 
