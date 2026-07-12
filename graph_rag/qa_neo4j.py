@@ -14,6 +14,7 @@ Usage:
 import argparse
 import os
 import re
+from typing import Any
 
 from neo4j import GraphDatabase
 
@@ -261,6 +262,143 @@ def run_cypher(driver, cypher):
         return [record.data() for record in result]
 
 
+MAX_SUBGRAPH_EDGES = 30
+
+
+def _collect_seed_values(value: Any, key: str, entity_names: set,
+                         paper_ids: set):
+    """Collect entity names and paper ids from a projected Cypher value."""
+    key = key.lower()
+    if isinstance(value, dict):
+        for nested_key, nested_value in value.items():
+            _collect_seed_values(nested_value, nested_key, entity_names, paper_ids)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            _collect_seed_values(item, key, entity_names, paper_ids)
+    elif isinstance(value, str):
+        if "paper_id" in key or key in {"pid", "paper"}:
+            paper_ids.add(value)
+        elif (
+            key in {"name", "names", "entity_names"}
+            or key.endswith(".name")
+            or key.endswith("_name")
+            or key.endswith("_names")
+        ):
+            entity_names.add(value)
+
+
+def extract_subgraph_seeds(records):
+    """Extract stable visualization seeds from common Cypher projections."""
+    entity_names, paper_ids = set(), set()
+    for record in records:
+        for key, value in record.items():
+            _collect_seed_values(value, key, entity_names, paper_ids)
+    return sorted(entity_names), sorted(paper_ids)
+
+
+def get_relevant_subgraph(driver, records, max_edges=MAX_SUBGRAPH_EDGES):
+    """Return a bounded one-hop evidence graph around the query results.
+
+    The answer query usually projects strings rather than Neo4j node objects.
+    Its returned entity names and paper ids therefore become seeds for one
+    additional, parameterized query over the same graph. This keeps the
+    visualization tied to the answer evidence without asking the LLM to invent
+    a second Cypher query.
+    """
+    entity_names, paper_ids = extract_subgraph_seeds(records)
+    empty = {
+        "nodes": [],
+        "edges": [],
+        "truncated": False,
+        "seed_names": entity_names,
+        "seed_paper_ids": paper_ids,
+    }
+    if not entity_names and not paper_ids:
+        return empty
+
+    filters = []
+    if entity_names:
+        filters.append("(source.name IN $entity_names OR target.name IN $entity_names)")
+    if paper_ids:
+        filters.append("rel.paper_id IN $paper_ids")
+    where = " AND ".join(filters)
+
+    query = f"""
+    MATCH (source:Entity)-[rel]->(target:Entity)
+    WHERE {where}
+    WITH source, rel, target,
+         CASE
+           WHEN source.name IN $entity_names AND target.name IN $entity_names
+           THEN 0 ELSE 1
+         END AS relevance
+    RETURN elementId(source) AS source_id,
+           source.name AS source_name,
+           source.paper_id AS source_paper_id,
+           elementId(rel) AS relationship_id,
+           type(rel) AS relationship_type,
+           rel.predicate_text AS predicate,
+           rel.info_unit AS info_unit,
+           rel.paper_id AS paper_id,
+           elementId(target) AS target_id,
+           target.name AS target_name,
+           target.paper_id AS target_paper_id
+    ORDER BY relevance, paper_id, source_name, target_name
+    LIMIT $limit
+    """
+    with driver.session() as session:
+        rows = [record.data() for record in session.run(
+            query,
+            entity_names=entity_names,
+            paper_ids=paper_ids,
+            limit=max_edges + 1,
+        )]
+
+    truncated = len(rows) > max_edges
+    rows = rows[:max_edges]
+    nodes = {}
+    edges = []
+    for row in rows:
+        nodes[row["source_id"]] = {
+            "id": row["source_id"],
+            "label": row["source_name"],
+            "paper_id": row["source_paper_id"],
+        }
+        nodes[row["target_id"]] = {
+            "id": row["target_id"],
+            "label": row["target_name"],
+            "paper_id": row["target_paper_id"],
+        }
+        edges.append({
+            "id": row["relationship_id"],
+            "source": row["source_id"],
+            "target": row["target_id"],
+            "label": row["predicate"] or row["relationship_type"],
+            "type": row["relationship_type"],
+            "paper_id": row["paper_id"],
+            "info_unit": row["info_unit"],
+        })
+
+    return {
+        "nodes": list(nodes.values()),
+        "edges": edges,
+        "truncated": truncated,
+        "seed_names": entity_names,
+        "seed_paper_ids": paper_ids,
+    }
+
+
+def safe_get_relevant_subgraph(driver, records):
+    """Build visualization data without ever breaking an otherwise valid answer."""
+    try:
+        return get_relevant_subgraph(driver, records)
+    except Exception as exc:
+        print(f"[subgraph visualization failed: {exc}]")
+        return {
+            "nodes": [], "edges": [], "truncated": False,
+            "seed_names": [], "seed_paper_ids": [], "error": str(exc),
+        }
+
+
 CYPHER_START_KEYWORDS = (
     "MATCH", "OPTIONAL", "WITH", "CALL", "UNWIND", "RETURN", "MERGE", "CREATE",
 )
@@ -283,12 +421,14 @@ def safe_run_cypher(driver, cypher):
 
 
 def answer_question(driver, client, model_name, schema_text, question):
-    """Returns a dict: {"answer": str, "cypher": str or None}.
+    """Return the grounded answer, executed Cypher, and evidence subgraph.
+
     "cypher" is the actual query that was executed (or None if the LLM
     determined the question was out of scope and never ran a query at all)
     -- this is what a UI should display in a traceability/verification
     panel, instead of trying to scrape it back out of console print()
-    output (which is never part of the return value)."""
+    output (which is never part of the return value). ``subgraph`` contains a
+    bounded node/edge projection derived from the query's result records."""
     known_info_units = get_known_info_units(driver)
 
     cypher = generate_cypher(client, model_name, schema_text, question)
@@ -300,7 +440,7 @@ def answer_question(driver, client, model_name, schema_text, question):
     # unrelated to the paper graph). Treat that explanation as the answer
     # directly instead of trying to execute it as a query.
     if not looks_like_cypher(cypher):
-        return {"answer": cypher, "cypher": None}
+        return {"answer": cypher, "cypher": None, "subgraph": None}
 
     records, err = safe_run_cypher(driver, cypher)
 
@@ -310,11 +450,15 @@ def answer_question(driver, client, model_name, schema_text, question):
         cypher = fix_info_unit_literals(cypher, known_info_units)
         print(f"[cypher retry] {cypher}")
         if not looks_like_cypher(cypher):
-            return {"answer": cypher, "cypher": None}
+            return {"answer": cypher, "cypher": None, "subgraph": None}
         records, err = safe_run_cypher(driver, cypher)
         if err is not None:
             print(f"[retry also failed: {err}]")
-            return {"answer": "No matching results found in the graph.", "cypher": cypher}
+            return {
+                "answer": "No matching results found in the graph.",
+                "cypher": cypher,
+                "subgraph": None,
+            }
 
     if not records:
         # Query was valid but returned nothing -- likely too many/too strict
@@ -337,17 +481,22 @@ def answer_question(driver, client, model_name, schema_text, question):
         cypher = fix_info_unit_literals(cypher, known_info_units)
         print(f"[cypher broadened] {cypher}")
         if not looks_like_cypher(cypher):
-            return {"answer": cypher, "cypher": None}
+            return {"answer": cypher, "cypher": None, "subgraph": None}
         records, err = safe_run_cypher(driver, cypher)
         if err is not None:
             print(f"[broadened query also failed: {err}]")
             records = []
     if not records:
-        return {"answer": "No matching results found in the graph.", "cypher": cypher}
+        return {
+            "answer": "No matching results found in the graph.",
+            "cypher": cypher,
+            "subgraph": None,
+        }
 
+    subgraph = safe_get_relevant_subgraph(driver, records)
     prompt = f"Question: {question}\n\nCypher results:\n{records}\n\nAnswer:"
     answer = call_llm(client, model_name, ANSWER_SYSTEM_PROMPT, prompt)
-    return {"answer": answer, "cypher": cypher}
+    return {"answer": answer, "cypher": cypher, "subgraph": subgraph}
 
 
 def main():

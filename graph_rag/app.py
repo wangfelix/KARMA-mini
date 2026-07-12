@@ -15,6 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from graph_rag.qa_neo4j import answer_question, get_schema_text, make_llm_client
+from graph_rag.visualization import subgraph_to_dot
 from karma_mini.rag import Embedder, answer, hybrid_search, load_index
 
 load_dotenv()
@@ -184,6 +185,34 @@ if submitted and user_query.strip():
             st.info("Check that Neo4j is running and contains the loaded graph.")
         else:
             st.markdown(graph_result["answer"])
+            subgraph = graph_result.get("subgraph")
+            with st.expander("Relevant evidence subgraph", expanded=True):
+                if subgraph and subgraph.get("nodes"):
+                    st.graphviz_chart(
+                        subgraph_to_dot(subgraph),
+                        width="stretch",
+                    )
+                    st.caption(
+                        f"{len(subgraph['nodes'])} nodes and "
+                        f"{len(subgraph['edges'])} relationships from the "
+                        "Neo4j evidence neighborhood returned for this answer. "
+                        "Yellow nodes were returned directly by the answer query."
+                    )
+                    if subgraph.get("truncated"):
+                        st.info(
+                            "The visualization is limited to the 30 most relevant "
+                            "relationships to keep it readable."
+                        )
+                elif subgraph and subgraph.get("error"):
+                    st.info(
+                        "The answer was generated successfully, but its evidence "
+                        "subgraph could not be rendered."
+                    )
+                else:
+                    st.info(
+                        "This query returned an aggregate or no graph entities, "
+                        "so there is no evidence subgraph to display."
+                    )
             with st.expander("Graph query trace"):
                 if graph_result["cypher"]:
                     st.code(graph_result["cypher"], language="cypher")

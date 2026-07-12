@@ -175,6 +175,21 @@ creates separate nodes, so use fuzzy matching to catch variants.
     that exact category (e.g. check "approach" too per rule 8) — report
     that plainly rather than forcing a broadened but meaningless match.
 
+13. **Aggregate answers must also return their supporting evidence.** The
+    Streamlit UI visualizes the relevant subgraph using two stable aliases:
+    `paper_ids` and `entity_names`. For count questions, return the numeric
+    aggregate AND collect the matching paper ids and entity names. Do not
+    return only a bare count. Example:
+    ```cypher
+    MATCH (e:Entity)-[r]-(neighbor:Entity)
+    WHERE toLower(e.name) CONTAINS toLower("LSTM")
+    RETURN count(DISTINCT r.paper_id) AS paper_count,
+           collect(DISTINCT r.paper_id) AS paper_ids,
+           collect(DISTINCT e.name) AS entity_names
+    ```
+    For a global paper count where no entity was matched, still return
+    `collect(DISTINCT p.paper_id) AS paper_ids` alongside `count(p)`.
+
 ## Examples
 
 **Q: "what is the research problem of machine-translation/0"**

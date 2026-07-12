@@ -196,7 +196,8 @@ The Neo4j-backed GraphRAG implementation and its Streamlit interface live in
 - `graph_rag/qa_neo4j.py` translates questions to Cypher and summarizes the
   graph results.
 - `graph_rag/app.py` runs GraphRAG and plain RAG for the same question and
-  displays both answers side by side, including their respective traces.
+  displays both answers side by side, including the relevant Neo4j evidence
+  subgraph, generated Cypher, and retrieved text passages.
 
 Configure Neo4j in `.env` in addition to the KIT API variables:
 
