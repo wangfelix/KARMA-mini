@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import streamlit as st
+import streamlit.components.v1 as components
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 
@@ -15,7 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from graph_rag.qa_neo4j import answer_question, get_schema_text, make_llm_client
-from graph_rag.visualization import subgraph_to_dot
+from graph_rag.visualization import subgraph_to_dot, subgraph_to_html
 from karma_mini.rag import Embedder, answer, hybrid_search, load_index
 
 load_dotenv()
@@ -101,10 +102,6 @@ except Exception as exc:
     rag_init_error = exc
 
 st.title("GraphRAG vs. RAG")
-st.caption(
-    "Ask once and compare an answer grounded in the contribution graph with "
-    "an answer retrieved from the original paper text."
-)
 if graph_init_error:
     st.warning(f"GraphRAG is currently unavailable: {graph_init_error}")
 if rag_init_error:
@@ -113,7 +110,6 @@ if rag_init_error:
         "Build its index with `python rag.py index` if needed."
     )
 
-st.markdown("**Try an example:**")
 example_queries = [
     "What is LSTM",
     "how many papers use LSTM",
@@ -125,15 +121,35 @@ example_queries = [
 if "question" not in st.session_state:
     st.session_state.question = ""
 
-cols = st.columns(len(example_queries))
-for i, query_text in enumerate(example_queries):
-    if cols[i].button(query_text, key=f"btn_{i}"):
-        st.session_state.question = query_text
-        st.rerun()
+st.markdown(
+    """
+    <style>
+    .st-key-example_questions div[data-testid="stButton"] > button {
+        align-items: center;
+        display: flex;
+        height: 4.5rem;
+        justify-content: center;
+        line-height: 1.25;
+        padding: 0.65rem 0.8rem;
+        white-space: normal;
+        width: 100%;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+with st.container(key="example_questions"):
+    st.markdown("**Try an example:**")
+    cols = st.columns(len(example_queries))
+    for i, query_text in enumerate(example_queries):
+        if cols[i].button(query_text, key=f"btn_{i}", width="stretch"):
+            st.session_state.question = query_text
+            st.rerun()
 
 with st.form("question_form"):
     user_query = st.text_input(
-        "Ask a question about the papers:",
+        "Ask a question:",
         key="question",
         placeholder="e.g., Which papers use both attention mechanism and LSTM?",
     )
@@ -149,6 +165,37 @@ def run_plain_rag(question):
     client, model_name, rag_index, rag_embedder, rag_top_k = rag_backend
     hits = hybrid_search(rag_index, rag_embedder, question, k=rag_top_k)
     return {"answer": answer(client, model_name, question, hits), "hits": hits}
+
+
+def render_evidence_subgraph(subgraph):
+    """Render the interactive graph, with a static fallback if needed."""
+    if subgraph and subgraph.get("nodes"):
+        try:
+            components.html(
+                subgraph_to_html(subgraph),
+                height=640,
+                scrolling=False,
+            )
+        except Exception as exc:
+            st.warning(
+                "The interactive renderer was unavailable, so a static "
+                "fallback is shown."
+            )
+            st.graphviz_chart(
+                subgraph_to_dot(subgraph),
+                width="stretch",
+            )
+            print(f"[interactive graph renderer failed: {exc}]")
+    elif subgraph and subgraph.get("error"):
+        st.info(
+            "The answer was generated successfully, but its evidence "
+            "subgraph could not be rendered."
+        )
+    else:
+        st.info(
+            "This query returned an aggregate or no graph entities, so "
+            "there is no evidence subgraph to display."
+        )
 
 
 if submitted and user_query.strip():
@@ -185,34 +232,6 @@ if submitted and user_query.strip():
             st.info("Check that Neo4j is running and contains the loaded graph.")
         else:
             st.markdown(graph_result["answer"])
-            subgraph = graph_result.get("subgraph")
-            with st.expander("Relevant evidence subgraph", expanded=True):
-                if subgraph and subgraph.get("nodes"):
-                    st.graphviz_chart(
-                        subgraph_to_dot(subgraph),
-                        width="stretch",
-                    )
-                    st.caption(
-                        f"{len(subgraph['nodes'])} nodes and "
-                        f"{len(subgraph['edges'])} relationships from the "
-                        "Neo4j evidence neighborhood returned for this answer. "
-                        "Yellow nodes were returned directly by the answer query."
-                    )
-                    if subgraph.get("truncated"):
-                        st.info(
-                            "The visualization is limited to the 30 most relevant "
-                            "relationships to keep it readable."
-                        )
-                elif subgraph and subgraph.get("error"):
-                    st.info(
-                        "The answer was generated successfully, but its evidence "
-                        "subgraph could not be rendered."
-                    )
-                else:
-                    st.info(
-                        "This query returned an aggregate or no graph entities, "
-                        "so there is no evidence subgraph to display."
-                    )
             with st.expander("Graph query trace"):
                 if graph_result["cypher"]:
                     st.code(graph_result["cypher"], language="cypher")
@@ -234,3 +253,8 @@ if submitted and user_query.strip():
                         f"`{hit['score']:.3f}`"
                     )
                     st.caption(chunk["text"])
+
+    if not graph_error and graph_result:
+        st.divider()
+        with st.expander("GraphRAG evidence graph", expanded=True):
+            render_evidence_subgraph(graph_result.get("subgraph"))
