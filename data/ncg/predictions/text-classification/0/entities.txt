@@ -1,0 +1,62 @@
+2	45	64	Text Classification
+5	23	44	empirical exploration
+5	59	112	character - level convolutional networks ( ConvNets )
+5	117	136	text classification
+6	46	50	show
+6	56	156	character - level convolutional networks could achieve state - of - the - art or competitive results
+6	103	110	achieve
+6	111	156	state - of - the - art or competitive results
+7	32	50	traditional models
+7	51	58	such as
+7	59	71	bag of words
+7	74	81	n-grams
+7	82	85	and
+7	86	106	their TFIDF variants
+7	113	133	deep learning models
+7	142	163	word - based ConvNets
+7	168	193	recurrent neural networks
+18	36	83	text as a kind of raw signal at character level
+18	99	136	temporal ( one-dimensional ) ConvNets
+20	108	123	several of them
+21	20	31	comparisons
+21	35	42	offered
+21	43	47	with
+21	48	66	traditional models
+21	71	97	other deep learning models
+29	35	71	design of character - level ConvNets
+29	72	75	for
+29	76	95	text classification
+32	26	55	temporal convolutional module
+32	71	79	computes
+32	82	99	1 - D convolution
+40	20	26	helped
+40	27	29	us
+40	33	52	train deeper models
+40	56	78	temporal max - pooling
+48	10	24	pooling module
+48	25	32	enabled
+48	33	35	us
+48	36	44	to train
+48	45	74	ConvNets deeper than 6 layers
+48	77	82	where
+48	83	98	all others fail
+51	22	57	stochastic gradient descent ( SGD )
+51	65	86	minibatch of size 128
+51	95	107	momentum 0.9
+51	112	134	initial step size 0.01
+51	144	156	halved every
+51	144	166	halved every 3 epoches
+51	157	166	3 epoches
+51	167	170	for
+51	171	179	10 times
+55	0	22	Character quantization
+63	3	11	designed
+63	12	48	2 ConvNets - one large and one small
+72	4	9	input
+72	10	42	have number of features equal to
+72	43	45	70
+72	46	52	due to
+72	53	86	our character quantization method
+72	97	117	input feature length
+72	118	120	is
+72	121	125	1014

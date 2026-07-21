@@ -1,0 +1,3 @@
+(Contribution||has research problem||Joint Extraction of Entities and Relations)
+(Contribution||has research problem||a Novel Tagging Scheme)
+(Contribution||has research problem||Joint extraction of entities and relations)

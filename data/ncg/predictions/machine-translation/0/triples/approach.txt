@@ -1,3 +1,0 @@
-(Contribution||has||Approach)
-(Approach||has||a novel neural network architecture that can be used as a part of the conventional phrase-based SMT system)
-(Approach||proposes||to train the RNN Encoder - Decoder on a table of phrase pairs and use its scores as additional features in the log-linear model)

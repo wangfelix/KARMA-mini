@@ -1,0 +1,64 @@
+2	47	82	Matching Natural Language Sentences
+6	40	75	convolutional neural network models
+6	76	79	for
+6	80	102	matching two sentences
+6	121	143	convolutional strategy
+6	144	146	in
+6	147	153	vision
+6	158	164	speech
+7	13	19	models
+7	36	45	represent
+7	50	86	hierarchical structures of sentences
+7	87	91	with
+7	98	137	layerby - layer composition and pooling
+7	149	156	capture
+7	161	183	rich matching patterns
+7	184	186	at
+7	187	203	different levels
+8	4	10	models
+8	42	72	no prior knowledge on language
+8	92	102	applied to
+8	103	117	matching tasks
+8	118	120	of
+8	121	137	different nature
+8	142	144	in
+8	145	164	different languages
+9	20	22	on
+9	23	50	a variety of matching tasks
+9	51	63	demonstrates
+9	51	79	demonstrates the efficacy of
+9	80	98	the proposed model
+9	134	149	its superiority
+9	150	152	to
+9	153	170	competitor models
+21	139	181	layer - by - layer composition and pooling
+21	213	235	rich matching patterns
+21	239	255	different levels
+74	50	89	two related convolutional architectures
+74	92	98	namely
+74	99	106	ARC - I
+74	111	119	ARC - II
+74	124	127	for
+74	128	150	matching two sentences
+75	0	28	Architecture - I ( ARC - I )
+82	0	30	Architecture - II ( ARC - II )
+83	57	87	Architecture - II ( ARC - II )
+83	96	113	built directly on
+83	118	135	interaction space
+83	136	143	between
+83	144	157	two sentences
+91	29	37	performs
+91	40	87	2D max - pooling in non-overlapping 2 2 windows
+105	16	25	show that
+105	26	128	when ARC - II is trained on the ( S X , S Y ,S Y ) triples whereS Y randomly shuffles the words in S Y
+105	31	39	ARC - II
+105	122	124	in
+105	169	192	finding the correct S Y
+105	196	243	the usual contrastive negative sampling setting
+117	18	29	verified by
+117	34	66	superior performance of ARC - II
+117	67	69	in
+117	70	81	experiments
+117	96	98	on
+117	99	123	different matching tasks
+192	48	83	matching natural language sentences

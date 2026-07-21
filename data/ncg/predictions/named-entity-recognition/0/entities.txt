@@ -1,0 +1,75 @@
+2	0	58	0,000 + Times Accelerated Robust Subset Selection ( ARSS )
+6	3	10	address
+6	21	31	two issues
+6	48	92	accelerated robust subset selection ( ARSS )
+6	48	99	accelerated robust subset selection ( ARSS ) method
+7	56	69	first attempt
+7	70	79	to employ
+7	84	120	p ( 0 < p ? 1 ) - norm based measure
+7	121	124	for
+7	129	148	representation loss
+7	151	161	preventing
+7	162	174	large errors
+7	175	190	from dominating
+7	191	204	our objective
+9	11	20	data size
+9	21	23	is
+9	51	65	feature length
+9	73	76	N L
+9	173	175	to
+9	194	212	computational cost
+9	229	233	from
+9	234	238	ON 4
+9	242	248	ON 2 L
+10	48	54	verify
+10	60	70	our method
+10	80	91	outperforms
+10	92	116	state of the art methods
+10	128	132	runs
+10	133	183	10,000 + times faster than the most related method
+10	148	159	faster than
+10	160	183	the most related method
+48	30	72	accelerated robust subset selection method
+48	76	82	highly
+48	83	98	raise the speed
+48	124	144	boost the robustness
+48	145	157	on the other
+49	17	20	use
+49	25	68	p ( 0 < p ? 1 ) - norm based robust measure
+49	69	72	for
+49	77	96	representation loss
+49	99	109	preventing
+49	110	152	large errors from dominating our objective
+50	14	45	the robustness against outliers
+50	29	45	against outliers
+51	37	46	data size
+51	47	49	is
+51	77	91	feature length
+51	99	102	N L
+52	9	21	acceleration
+52	25	33	owing to
+52	38	75	Augmented Lagrange Multiplier ( ALM )
+52	83	104	equivalent derivation
+53	14	20	reduce
+53	25	49	computational complexity
+53	50	54	from
+53	55	59	ON 4
+53	60	62	to
+53	63	69	ON 2 L
+54	44	55	demonstrate
+54	74	128	our method is 10,000 + times faster than Nie 's method
+56	128	152	computational complexity
+56	163	165	to
+56	166	180	ON 2 L + N L 3
+56	220	239	500 + times speedup
+56	240	253	compared with
+56	258	274	authorial solver
+102	3	9	tackle
+102	20	30	two issues
+102	36	43	propose
+102	44	91	a more robust model in the p ( 0 < p ? 1 ) norm
+103	32	34	is
+103	60	77	speedup algorithm
+103	81	89	proposed
+103	106	110	save
+103	115	134	computational costs

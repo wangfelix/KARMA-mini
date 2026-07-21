@@ -80,6 +80,10 @@ ROOT = "Contribution"
 # must therefore be excluded from the entities/phrase predictions.
 _STRUCTURAL_NODES = {ROOT} | {spec.node_label for spec in IU_SPEC.values()}
 
+# Predicates that are graph scaffolding rather than sentence wording; they are
+# never emitted as phrase (entity) predictions.
+STRUCTURAL_PREDICATES = {"has", "has research problem", "Code"}
+
 
 def normalize_unit(raw: str) -> Optional[str]:
     """Map a free-text / messy info-unit label to a canonical INFO_UNITS token.

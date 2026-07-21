@@ -1,0 +1,5 @@
+(Contribution||has||Tasks)
+(Tasks||has||extraction of triplets)
+(extraction of triplets||are composed of||two entities)
+(extraction of triplets||are composed of||one relation)
+(one relation||between||these two entities)

@@ -1,0 +1,2 @@
+(Contribution||has||Hyperparameters)
+(Hyperparameters||performs||2D max - pooling in non-overlapping 2 2 windows)

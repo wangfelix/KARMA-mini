@@ -11,6 +11,7 @@ and file format the scorer consumes:
 """
 
 import os
+import glob
 import logging
 from typing import Dict, Optional, Tuple, List
 
@@ -18,7 +19,9 @@ from karma_mini.core.data_structures import (
     KnowledgeGraph,
     IU_SPEC,
     is_structural_node,
+    STRUCTURAL_PREDICATES,
 )
+from karma_mini.core.spans import find_span
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +31,8 @@ def _format_triple(subject: str, predicate: str, obj: str) -> str:
 
 
 def write_predictions(paper_id: str, graph: KnowledgeGraph, out_root: str,
-                      sentences: Optional[Dict[int, str]] = None) -> Dict[str, int]:
+                      sentences: Optional[Dict[int, str]] = None,
+                      contribution_lines: Optional[List[int]] = None) -> Dict[str, int]:
     """Write all prediction files for one paper.
 
     Args:
@@ -38,6 +42,9 @@ def write_predictions(paper_id: str, graph: KnowledgeGraph, out_root: str,
         sentences: {line_no: text} from the Stanza file, used to compute the
                    character offsets for entities.txt. If omitted, entities.txt
                    is written empty.
+        contribution_lines: explicit contribution-sentence prediction (from the
+                   sentence-selection agent). Falls back to the lines the
+                   graph's triples were drawn from.
 
     Returns:
         {"triples": n, "info_units": n, "sentences": n, "entities": n}
@@ -45,6 +52,11 @@ def write_predictions(paper_id: str, graph: KnowledgeGraph, out_root: str,
     out_dir = os.path.join(out_root, paper_id)
     triples_dir = os.path.join(out_dir, "triples")
     os.makedirs(triples_dir, exist_ok=True)
+
+    # Remove stale triple files from a previous run so re-runs don't leave
+    # info-unit predictions behind that this run no longer makes.
+    for old in glob.glob(os.path.join(triples_dir, "*.txt")):
+        os.remove(old)
 
     grouped = graph.group_by_info_unit()
 
@@ -64,7 +76,10 @@ def write_predictions(paper_id: str, graph: KnowledgeGraph, out_root: str,
         triple_count += len(lines)
 
     # --- sentences.txt ---
-    contrib_lines = graph.contribution_lines()
+    if contribution_lines is not None:
+        contrib_lines = sorted(set(contribution_lines))
+    else:
+        contrib_lines = graph.contribution_lines()
     with open(os.path.join(out_dir, "sentences.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(str(n) for n in contrib_lines) + ("\n" if contrib_lines else ""))
 
@@ -84,11 +99,13 @@ def write_predictions(paper_id: str, graph: KnowledgeGraph, out_root: str,
 
 def _collect_entities(graph: KnowledgeGraph,
                       sentences: Dict[int, str]) -> List[Tuple[int, int, int, str]]:
-    """Build deduplicated (line, start, end, phrase) tuples from phrase nodes.
+    """Build deduplicated (line, start, end, phrase) tuples from the graph.
 
-    A phrase's char offset is found by locating it verbatim within its source
-    Stanza line (predicted phrases are drawn from that text, so they string
-    match). Structural nodes ("Contribution" and info-unit labels) are skipped,
+    Gold entities.txt contains BOTH scientific-term phrases (triple endpoints)
+    and predicate phrases, so both are emitted. A phrase's char offsets come
+    from locating it in its source Stanza line; the emitted text is the exact
+    line slice. Structural nodes ("Contribution", info-unit labels) and
+    structural predicates ("has", "has research problem", "Code") are skipped,
     as are phrases that cannot be located in their line.
     """
     seen = set()
@@ -99,14 +116,17 @@ def _collect_entities(graph: KnowledgeGraph,
         text = sentences.get(line_no)
         if not text:
             continue
-        for phrase in (t.subject, t.object):
+        candidates = [t.subject, t.object]
+        if t.predicate and t.predicate not in STRUCTURAL_PREDICATES:
+            candidates.append(t.predicate)
+        for phrase in candidates:
             if not phrase or is_structural_node(phrase):
                 continue
-            start = text.find(phrase)
-            if start < 0:
+            span = find_span(text, phrase)
+            if span is None:
                 continue
-            end = start + len(phrase)
-            key = (line_no, start, end, phrase)
+            start, end = span
+            key = (line_no, start, end, text[start:end])
             if key not in seen:
                 seen.add(key)
                 out.append(key)

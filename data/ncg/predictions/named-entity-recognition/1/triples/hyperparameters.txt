@@ -1,0 +1,4 @@
+(Contribution||has||Hyperparameters)
+(Hyperparameters||is used by||dropout training)
+(dropout training||encourages||the model)
+(the model||to learn||to trust both sources of evidence)
