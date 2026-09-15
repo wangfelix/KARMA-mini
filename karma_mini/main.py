@@ -4,7 +4,7 @@ import logging
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from karma_mini.core.pipeline import KARMAPipeline
+from .core.pipeline import KARMAPipeline
 
 # Load environment variables from .env file
 load_dotenv()
@@ -24,8 +24,8 @@ AVAILABLE_MODELS = [
 def main():
     parser = argparse.ArgumentParser(description="KARMA Mini Pipeline")
     parser.add_argument(
-        "--model", 
-        choices=AVAILABLE_MODELS, 
+        "--model",
+        choices=AVAILABLE_MODELS,
         default="kit.mistral-small-4-119b-a8b", # Using mistral as default for better reasoning
         help="Select the LLM model to query"
     )

@@ -25,9 +25,9 @@ except ImportError:
     pass
 
 # ---------------------------------------------------------------------------
-# Same client setup as main.py: OpenAI-compatible client against the KIT
-# endpoint, same model roster, so this script and the extraction pipeline
-# share one config.
+# Same client setup as karma_mini/main.py: OpenAI-compatible client against
+# the KIT endpoint, same model roster, so this script and the extraction
+# pipeline share one config.
 # ---------------------------------------------------------------------------
 from openai import OpenAI
 

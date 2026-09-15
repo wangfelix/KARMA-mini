@@ -92,7 +92,10 @@ def main():
 
     papers = discover_papers(args.pred)
     if not papers:
-        sys.exit(f"No prediction papers found under {args.pred}. Run main.py first.")
+        sys.exit(
+            f"No prediction papers found under {args.pred}. "
+            "Run python -m karma_mini first."
+        )
 
     # Aggregate counters (same structure as the official main()).
     agg = {k: {"tp": 0, "fp": 0, "fn": 0, "total": 0}
