@@ -1,7 +1,6 @@
 """Simple NLQ -> Cypher -> Neo4j -> natural-language-answer QA system.
 
 
-
 Usage:
     python -m graph_rag.qa_neo4j --uri bolt://localhost:7687 --user neo4j
 
@@ -18,6 +17,8 @@ from typing import Any
 
 from neo4j import GraphDatabase
 
+from .prompts import ANSWER_SYSTEM_PROMPT, CYPHER_SYSTEM_PROMPT
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -25,9 +26,9 @@ except ImportError:
     pass
 
 # ---------------------------------------------------------------------------
-# Same client setup as main.py: OpenAI-compatible client against the KIT
-# endpoint, same model roster, so this script and the extraction pipeline
-# share one config.
+# Same client setup as karma_mini/main.py: OpenAI-compatible client against
+# the KIT endpoint, same model roster, so this script and the extraction
+# pipeline share one config.
 # ---------------------------------------------------------------------------
 from openai import OpenAI
 
@@ -152,65 +153,6 @@ e.paper_id, since e.paper_id only exists on structural nodes.
 # NLQ -> Cypher -> results -> natural language answer
 # ---------------------------------------------------------------------------
 
-def load_skill(path=None):
-    """Load the Cypher-generation instructions from an external markdown
-    file so they can be edited without touching this script. Resolves the
-    default path relative to THIS script's own location (not the current
-    working directory), so it works no matter where the program is
-    launched from -- important once teammates run this on their own
-    machines. Falls back to a minimal built-in prompt if the file is
-    missing."""
-    if path is None:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(script_dir, "skill.md")
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        print(f"[warning] {path} not found, using minimal built-in prompt")
-        return (
-            "You translate a natural-language question about a scholarly-"
-            "paper contribution knowledge graph into a single Cypher query. "
-            "Use toLower(...) CONTAINS toLower(...) for fuzzy text matching, "
-            "filter paper_id and info_unit as exact properties (never search "
-            "for them inside Entity.name), and never invent relationship "
-            "type names."
-        )
-
-
-CYPHER_SYSTEM_PROMPT = (
-    load_skill() + "\n\n"
-    "Return ONLY the Cypher query itself, no explanation, no markdown fences."
-)
-
-ANSWER_SYSTEM_PROMPT = """You answer the user's question using ONLY the \
-provided Cypher query results, in natural, conversational English -- like \
-a knowledgeable research assistant explaining findings, not a database \
-dump. Write full sentences that weave in the actual details from the \
-results (the original predicate_text wording, the info_unit category, how \
-entities connect) rather than just listing bare names or IDs. Give enough \
-context that someone who hasn't seen the raw data would understand WHY \
-the answer is true, not just WHAT it is. For example, instead of "Paper X: \
-LSTM", say something like "Paper X uses an LSTM-based architecture, \
-specifically describing it as '<predicate_text wording>'." If multiple \
-papers or facts are involved, briefly note what's similar or different \
-between them instead of just concatenating them.
-
-Ground rules that still apply:
-- Never state anything not directly supported by the provided results --
-  no outside knowledge, no filling in gaps with assumptions.
-- If results are empty, say so plainly instead of guessing.
-- Always mention which paper(s) (paper_id) a specific claim comes from.
-- For a pure aggregate answer (a single count/total with no per-paper
-  breakdown), just state the number naturally -- don't force a paper_id
-  citation onto it, but a sentence of context is still welcome (e.g. "27
-  papers mention LSTM, spanning all five task categories.").
-- If the results contain a list of items, you MUST include every single
-  one -- never silently truncate, sample, or drop items, no matter how
-  many there are. A natural-sounding answer does not mean a shorter one;
-  weave every item in, grouped or summarized narratively if that helps
-  readability, but nothing gets left out."""
-
 
 def get_known_info_units(driver):
     with driver.session() as session:
@@ -253,7 +195,42 @@ def generate_cypher(client, model_name, schema_text, question, prior_error=None)
             f"{prior_error})"
         )
     cypher = call_llm(client, model_name, CYPHER_SYSTEM_PROMPT, prompt)
-    return cypher.strip().strip("`").replace("cypher\n", "", 1)
+    return clean_cypher_response(cypher)
+
+
+AGGREGATE_CALL = re.compile(
+    r"\b(count|collect|sum|avg|min|max)\s*\(", re.IGNORECASE)
+SIMPLE_REL_VAR = re.compile(r"-\[\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^\]]*)?\]-")
+RETURN_HEAD = re.compile(r"\bRETURN\s+(DISTINCT\s+)?", re.IGNORECASE)
+
+
+def add_direction_projection(cypher: str) -> str:
+    """Add subject and object columns that preserve each stored edge's direction.
+
+    For undirected patterns, ``startNode`` and ``endNode`` identify the true
+    subject and object regardless of which endpoint matched the query.
+    Supports one to three named relationships and skips aggregate queries,
+    queries containing ``*``, or queries already projecting ``startNode`` for
+    one of those relationships.
+    """
+    if AGGREGATE_CALL.search(cypher) or "*" in cypher:
+        return cypher
+    rel_vars = list(dict.fromkeys(SIMPLE_REL_VAR.findall(cypher)))
+    if not 1 <= len(rel_vars) <= 3:
+        return cypher
+    if any(f"startNode({rel})" in cypher for rel in rel_vars):
+        return cypher
+    match = RETURN_HEAD.search(cypher)
+    if match is None:
+        return cypher
+    insert_at = match.end()
+    parts = []
+    for index, rel in enumerate(rel_vars, start=1):
+        suffix = "" if len(rel_vars) == 1 else f"_{index}"
+        parts.append(f"startNode({rel}).name AS fact_subject{suffix}")
+        parts.append(f"endNode({rel}).name AS fact_object{suffix}")
+    columns = ", ".join(parts) + ", "
+    return cypher[:insert_at] + columns + cypher[insert_at:]
 
 
 def run_cypher(driver, cypher):
@@ -402,6 +379,8 @@ def safe_get_relevant_subgraph(driver, records):
 CYPHER_START_KEYWORDS = (
     "MATCH", "OPTIONAL", "WITH", "CALL", "UNWIND", "RETURN", "MERGE", "CREATE",
 )
+THINK_BLOCK_RE = re.compile(r"<think>.*?</think>\s*", re.IGNORECASE | re.DOTALL)
+CODE_FENCE_START_RE = re.compile(r"^```(?:cypher)?\s*", re.IGNORECASE)
 
 
 def looks_like_cypher(text):
@@ -412,23 +391,87 @@ def looks_like_cypher(text):
     return first_word in CYPHER_START_KEYWORDS
 
 
+def clean_cypher_response(text):
+    """Remove model reasoning wrappers and Markdown fences from Cypher."""
+    cleaned = THINK_BLOCK_RE.sub("", text or "").strip()
+    cleaned = CODE_FENCE_START_RE.sub("", cleaned)
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    return cleaned.strip()
+
+
 def safe_run_cypher(driver, cypher):
-    """run_cypher that never raises -- returns (records, error_or_None)."""
+    """run_cypher that never raises -- returns (records, error_or_None).
+
+    The query is first annotated with explicit direction columns where that
+    can be done safely, so the evidence records state which entity is the
+    subject of each fact rather than leaving it to the order in which the
+    pattern happened to match.
+    """
     try:
-        return run_cypher(driver, cypher), None
+        return run_cypher(driver, add_direction_projection(cypher)), None
     except Exception as e:
-        return None, e
+        # The annotation is additive, but fall back to the original query
+        # rather than losing an otherwise valid result to a rewrite error.
+        try:
+            return run_cypher(driver, cypher), None
+        except Exception:
+            return None, e
 
 
-def answer_question(driver, client, model_name, schema_text, question):
-    """Return the grounded answer, executed Cypher, and evidence subgraph.
+PAPER_ID_LITERAL = r"[a-z][a-z-]+/\d+"
+PAPER_ID_EQUALITY_RE = re.compile(
+    rf"\b\w+\.paper_id\s*=\s*(['\"])(?P<paper_id>{PAPER_ID_LITERAL})\1",
+    re.IGNORECASE,
+)
+PAPER_ID_IN_RE = re.compile(
+    r"\b\w+\.paper_id\s+IN\s*\[(?P<values>[^\]]*)\]",
+    re.IGNORECASE,
+)
+PAPER_ID_QUOTED_RE = re.compile(
+    rf"(['\"])(?P<paper_id>{PAPER_ID_LITERAL})\1",
+    re.IGNORECASE,
+)
 
-    "cypher" is the actual query that was executed (or None if the LLM
-    determined the question was out of scope and never ran a query at all)
-    -- this is what a UI should display in a traceability/verification
-    panel, instead of trying to scrape it back out of console print()
-    output (which is never part of the return value). ``subgraph`` contains a
-    bounded node/edge projection derived from the query's result records."""
+
+def extract_cypher_scope_paper_ids(cypher):
+    """Return literal paper ids that deterministically constrain a query."""
+    paper_ids = {
+        match.group("paper_id").lower()
+        for match in PAPER_ID_EQUALITY_RE.finditer(cypher or "")
+    }
+    for match in PAPER_ID_IN_RE.finditer(cypher or ""):
+        paper_ids.update(
+            item.group("paper_id").lower()
+            for item in PAPER_ID_QUOTED_RE.finditer(match.group("values"))
+        )
+    return sorted(paper_ids)
+
+
+def attach_cypher_scope_provenance(records, cypher):
+    """Retain provenance implied by a Cypher paper-id filter.
+
+    Generated Cypher occasionally filters on ``r.paper_id`` correctly but
+    omits it from ``RETURN``. The result rows are still constrained to that
+    paper, so retain the filter as explicit query-scope provenance without
+    changing query semantics or aggregation cardinality.
+    """
+    paper_ids = extract_cypher_scope_paper_ids(cypher)
+    if not paper_ids:
+        return records
+    return [
+        {**record, "query_scope_paper_ids": paper_ids}
+        for record in records
+    ]
+
+
+def retrieve_question(driver, client, model_name, schema_text, question):
+    """Return executed Cypher, exact records, and a bounded evidence graph.
+
+    ``fallback_answer`` is non-null only when no answerable graph evidence is
+    available. Separating retrieval from generation lets controlled
+    experiments use the same answer generator for GraphRAG and Plain RAG.
+    """
     known_info_units = get_known_info_units(driver)
 
     cypher = generate_cypher(client, model_name, schema_text, question)
@@ -440,7 +483,12 @@ def answer_question(driver, client, model_name, schema_text, question):
     # unrelated to the paper graph). Treat that explanation as the answer
     # directly instead of trying to execute it as a query.
     if not looks_like_cypher(cypher):
-        return {"answer": cypher, "cypher": None, "subgraph": None}
+        return {
+            "cypher": None,
+            "records": [],
+            "subgraph": None,
+            "fallback_answer": cypher,
+        }
 
     records, err = safe_run_cypher(driver, cypher)
 
@@ -450,14 +498,20 @@ def answer_question(driver, client, model_name, schema_text, question):
         cypher = fix_info_unit_literals(cypher, known_info_units)
         print(f"[cypher retry] {cypher}")
         if not looks_like_cypher(cypher):
-            return {"answer": cypher, "cypher": None, "subgraph": None}
+            return {
+                "cypher": None,
+                "records": [],
+                "subgraph": None,
+                "fallback_answer": cypher,
+            }
         records, err = safe_run_cypher(driver, cypher)
         if err is not None:
             print(f"[retry also failed: {err}]")
             return {
-                "answer": "No matching results found in the graph.",
                 "cypher": cypher,
+                "records": [],
                 "subgraph": None,
+                "fallback_answer": "No matching results found in the graph.",
             }
 
     if not records:
@@ -481,40 +535,75 @@ def answer_question(driver, client, model_name, schema_text, question):
         cypher = fix_info_unit_literals(cypher, known_info_units)
         print(f"[cypher broadened] {cypher}")
         if not looks_like_cypher(cypher):
-            return {"answer": cypher, "cypher": None, "subgraph": None}
+            return {
+                "cypher": None,
+                "records": [],
+                "subgraph": None,
+                "fallback_answer": cypher,
+            }
         records, err = safe_run_cypher(driver, cypher)
         if err is not None:
             print(f"[broadened query also failed: {err}]")
             records = []
     if not records:
         return {
-            "answer": "No matching results found in the graph.",
             "cypher": cypher,
+            "records": [],
             "subgraph": None,
+            "fallback_answer": "No matching results found in the graph.",
         }
 
+    records = attach_cypher_scope_provenance(records, cypher)
     subgraph = safe_get_relevant_subgraph(driver, records)
-    prompt = f"Question: {question}\n\nCypher results:\n{records}\n\nAnswer:"
-    answer = call_llm(client, model_name, ANSWER_SYSTEM_PROMPT, prompt)
-    return {"answer": answer, "cypher": cypher, "subgraph": subgraph}
+    return {
+        "cypher": cypher,
+        "records": records,
+        "subgraph": subgraph,
+        "fallback_answer": None,
+    }
+
+
+def answer_question(driver, client, model_name, schema_text, question):
+    """Return the grounded answer, executed Cypher, records, and subgraph."""
+    retrieval = retrieve_question(
+        driver,
+        client,
+        model_name,
+        schema_text,
+        question,
+    )
+    if retrieval["fallback_answer"] is not None:
+        answer = retrieval["fallback_answer"]
+    else:
+        prompt = (
+            f"Question: {question}\n\n"
+            f"Cypher results:\n{retrieval['records']}\n\nAnswer:"
+        )
+        answer = call_llm(client, model_name, ANSWER_SYSTEM_PROMPT, prompt)
+    return {
+        "answer": answer,
+        "cypher": retrieval["cypher"],
+        "records": retrieval["records"],
+        "subgraph": retrieval["subgraph"],
+    }
 
 
 def main():
-    ap = argparse.ArgumentParser(description="KARMA Mini Graph QA")
-    ap.add_argument("--uri", default=os.getenv("NEO4J_URI", "bolt://localhost:7687"))
-    ap.add_argument("--user", default=os.getenv("NEO4J_USER", "neo4j"))
-    ap.add_argument("--password", default=os.getenv("NEO4J_PASSWORD"))
-    ap.add_argument(
+    parser = argparse.ArgumentParser(description="KARMA Mini Graph QA")
+    parser.add_argument("--uri", default=os.getenv("NEO4J_URI", "bolt://localhost:7687"))
+    parser.add_argument("--user", default=os.getenv("NEO4J_USER", "neo4j"))
+    parser.add_argument("--password", default=os.getenv("NEO4J_PASSWORD"))
+    parser.add_argument(
         "--model",
         choices=AVAILABLE_MODELS,
         default="kit.mistral-small-4-119b-a8b",
         help="Select the LLM model to query",
     )
-    ap.add_argument(
+    parser.add_argument(
         "--timeout", type=float, default=60.0,
         help="API request timeout in seconds (default: 60.0)",
     )
-    args = ap.parse_args()
+    args = parser.parse_args()
 
     if not args.password:
         raise SystemExit(

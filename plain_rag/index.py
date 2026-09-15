@@ -68,7 +68,7 @@ def load_index(out_dir: str) -> RAGIndex:
     chunks_path = os.path.join(out_dir, "chunks.jsonl")
     if not os.path.exists(chunks_path):
         raise FileNotFoundError(
-            f"No index at {out_dir} — build it first: python rag.py index")
+            f"No index at {out_dir} — build it first: python -m plain_rag index")
     chunks = [json.loads(line) for line in open(chunks_path, encoding="utf-8")]
     embeddings = np.load(os.path.join(out_dir, "embeddings.npy"))
     meta = json.load(open(os.path.join(out_dir, "meta.json"), encoding="utf-8"))

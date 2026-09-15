@@ -10,10 +10,11 @@ from .corpus import build_chunks
 from .bm25 import BM25Index, tokenize
 from .embedder import Embedder
 from .index import build_index, load_index, RAGIndex
-from .retriever import hybrid_search
+from .retriever import hybrid_search, retrieve
 from .generator import answer
 
 __all__ = [
     "build_chunks", "BM25Index", "tokenize", "Embedder",
-    "build_index", "load_index", "RAGIndex", "hybrid_search", "answer",
+    "build_index", "load_index", "RAGIndex", "hybrid_search", "retrieve",
+    "answer",
 ]

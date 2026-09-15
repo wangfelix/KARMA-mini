@@ -143,9 +143,9 @@ def load_all_predictions(loader: KarmaNeo4jLoader, predictions_root: str):
             paper_id = f"{task_dir.name}/{paper_dir.name}"
             n_papers += 1
 
-            for iu_file in sorted(triples_dir.glob("*.txt")):
-                info_unit = iu_file.stem
-                for line in iu_file.read_text(encoding="utf-8").splitlines():
+            for info_unit_file in sorted(triples_dir.glob("*.txt")):
+                info_unit = info_unit_file.stem
+                for line in info_unit_file.read_text(encoding="utf-8").splitlines():
                     parsed = parse_triple_line(line)
                     if parsed is None:
                         if line.strip():
@@ -160,15 +160,15 @@ def load_all_predictions(loader: KarmaNeo4jLoader, predictions_root: str):
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--predictions", required=True,
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--predictions", required=True,
                      help="Path to data/ncg/predictions")
-    ap.add_argument("--uri", default=os.getenv("NEO4J_URI", "bolt://localhost:7687"))
-    ap.add_argument("--user", default=os.getenv("NEO4J_USER", "neo4j"))
-    ap.add_argument("--password", default=os.getenv("NEO4J_PASSWORD"))
-    ap.add_argument("--clear", action="store_true",
+    parser.add_argument("--uri", default=os.getenv("NEO4J_URI", "bolt://localhost:7687"))
+    parser.add_argument("--user", default=os.getenv("NEO4J_USER", "neo4j"))
+    parser.add_argument("--password", default=os.getenv("NEO4J_PASSWORD"))
+    parser.add_argument("--clear", action="store_true",
                      help="Wipe the whole database before loading")
-    args = ap.parse_args()
+    args = parser.parse_args()
 
     if not args.password:
         raise SystemExit(

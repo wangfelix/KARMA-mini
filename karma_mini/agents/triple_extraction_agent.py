@@ -106,22 +106,22 @@ Return ONLY a valid JSON array of {"subject": ..., "predicate": ..., "object": .
         prompt = "\n".join(parts)
 
         response_text = self._make_llm_call(prompt, temperature=0.1)
-        raw = self._parse_json_response(response_text)
+        parsed_triples = self._parse_json_response(response_text)
 
         triples: List[Dict] = []
-        for t in raw:
-            if not isinstance(t, dict):
+        for raw_triple in parsed_triples:
+            if not isinstance(raw_triple, dict):
                 continue
-            subject = str(t.get("subject", "")).strip()
-            predicate = str(t.get("predicate", "")).strip()
-            obj = str(t.get("object", "")).strip()
+            subject = str(raw_triple.get("subject", "")).strip()
+            predicate = str(raw_triple.get("predicate", "")).strip()
+            obj = str(raw_triple.get("object", "")).strip()
             if not (subject and predicate and obj):
                 continue
 
             subject = self._resolve_endpoint(subject, text, known)
             obj = self._resolve_endpoint(obj, text, known)
             if subject is None or obj is None:
-                logger.debug(f"TEA dropped non-verbatim triple on line {line_no}: {t}")
+                logger.debug(f"TEA dropped non-verbatim triple on line {line_no}: {raw_triple}")
                 continue
 
             if predicate not in STRUCTURAL_PREDICATES:

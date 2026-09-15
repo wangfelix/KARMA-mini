@@ -45,11 +45,11 @@ def find_span(text: str, phrase: str) -> Optional[Tuple[int, int]]:
         if ch != " ":
             chars.append(ch.lower())
             index_map.append(idx)
-    k = "".join(chars).find(compact_phrase)
-    if k < 0:
+    compact_match_start = "".join(chars).find(compact_phrase)
+    if compact_match_start < 0:
         return None
-    start = index_map[k]
-    end = index_map[k + len(compact_phrase) - 1] + 1
+    start = index_map[compact_match_start]
+    end = index_map[compact_match_start + len(compact_phrase) - 1] + 1
     return start, end
 
 
