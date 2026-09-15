@@ -199,7 +199,7 @@ def load_triples(corpus_root: Path) -> list[Triple]:
 
 
 def tokens(text: str) -> list[str]:
-    """Tokenize exactly as rag_eval.score does, so matching stays consistent."""
+    """Tokenize exactly as evaluation.score does, so matching stays consistent."""
     return re.findall(r"[a-z0-9]+", text.lower())
 
 

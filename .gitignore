@@ -7,5 +7,17 @@ __pycache__/
 .DS_Store
 **/.DS_Store
 
+# Local IDE and coding-agent configuration
+/.idea/
+/.agents/
+/.claude/
+/AGENTS.md
+/CLAUDE.md
+
+# Local project context, manuscript, and presentation material
+/docs/
+/paper/
+/poster_assets/
+
 # RAG index artifacts (rebuild with: python rag.py index)
 data/rag/

@@ -21,7 +21,7 @@ import numpy as np
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from karma_mini.rag import Embedder, load_index, retrieve
+from plain_rag import Embedder, load_index, retrieve
 
 from .plain_retrieval import assert_open_corpus, format_retrieval_hits
 from .score import load_jsonl, retrieval_metrics

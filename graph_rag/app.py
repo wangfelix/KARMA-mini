@@ -17,7 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from graph_rag.qa_neo4j import answer_question, get_schema_text, make_llm_client
 from graph_rag.visualization import subgraph_to_dot, subgraph_to_html
-from karma_mini.rag import Embedder, answer, hybrid_search, load_index
+from plain_rag import Embedder, answer, hybrid_search, load_index
 
 load_dotenv()
 
@@ -107,7 +107,7 @@ if graph_init_error:
 if rag_init_error:
     st.warning(
         f"Plain RAG is currently unavailable: {rag_init_error}. "
-        "Build its index with `python rag.py index` if needed."
+        "Build its index with `python -m plain_rag index` if needed."
     )
 
 example_queries = [

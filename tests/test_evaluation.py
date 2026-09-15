@@ -10,42 +10,42 @@ from unittest.mock import patch
 
 import numpy as np
 
-from karma_mini.rag.bm25 import BM25Index, tokenize
-from karma_mini.rag.index import RAGIndex
-from karma_mini.rag.retriever import retrieve
+from plain_rag.bm25 import BM25Index, tokenize
+from plain_rag.index import RAGIndex
+from plain_rag.retriever import retrieve
 from graph_rag.qa_neo4j import (
     add_direction_projection,
     attach_cypher_scope_provenance,
     clean_cypher_response,
     extract_cypher_scope_paper_ids,
 )
-from rag_eval.calibration import (
+from evaluation.calibration import (
     apply_temperature,
     calibration_metrics,
     fit_temperature,
     inverse_softmax_logits,
 )
-from rag_eval.compare_ablation import (
+from evaluation.compare_ablation import (
     _paired_randomization_p,
     _validate_matched_configs,
 )
-from rag_eval.compare_systems import compare_systems, validate_response_file
-from rag_eval.judge import _validate_result
-from rag_eval.paired_statistics import paired_randomization_p
-from rag_eval.plain_retrieval import assert_open_corpus, explicit_paper_scope
-from rag_eval.questions import build_questions
-from rag_eval.retrieval_sensitivity import (
+from evaluation.compare_systems import compare_systems, validate_response_file
+from evaluation.judge import _validate_result
+from evaluation.paired_statistics import paired_randomization_p
+from evaluation.plain_retrieval import assert_open_corpus, explicit_paper_scope
+from evaluation.questions import build_questions
+from evaluation.retrieval_sensitivity import (
     build_configurations,
     question_stratum,
     summarize,
 )
-from rag_eval.run_experiment import (
+from evaluation.run_experiment import (
     ABSTENTION_ANSWER,
     _generate_common_answer,
     run_experiment,
 )
-from rag_eval.run_comparison import ComparisonPaths, run_pipeline
-from rag_eval.score import deterministic_metrics, retrieval_metrics, token_f1
+from evaluation.run_comparison import ComparisonPaths, run_pipeline
+from evaluation.score import deterministic_metrics, retrieval_metrics, token_f1
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -436,13 +436,13 @@ class ExperimentResumeTests(unittest.TestCase):
             plain_backend = self.FakePlainBackend()
             graph_backend = self.FakeGraphBackend()
             with patch(
-                "rag_eval.run_experiment._make_client",
+                "evaluation.run_experiment._make_client",
                 return_value=object(),
             ), patch(
-                "rag_eval.run_experiment.PlainBackend",
+                "evaluation.run_experiment.PlainBackend",
                 return_value=plain_backend,
             ) as plain_constructor, patch(
-                "rag_eval.run_experiment.GoldGraphBackend",
+                "evaluation.run_experiment.GoldGraphBackend",
                 return_value=graph_backend,
             ), patch.dict(os.environ, {"NEO4J_PASSWORD": "test-password"}):
                 with contextlib.redirect_stdout(io.StringIO()):
@@ -773,10 +773,10 @@ class SystemComparisonTests(unittest.TestCase):
                 overwrite=False,
             )
             with patch(
-                "rag_eval.run_comparison.run_experiment",
+                "evaluation.run_comparison.run_experiment",
                 side_effect=fake_generate,
             ), patch(
-                "rag_eval.run_comparison.run_judge",
+                "evaluation.run_comparison.run_judge",
                 side_effect=fake_judge,
             ):
                 with contextlib.redirect_stdout(io.StringIO()):

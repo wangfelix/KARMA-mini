@@ -21,7 +21,7 @@ from neo4j import GraphDatabase
 from openai import OpenAI
 
 from graph_rag.qa_neo4j import get_schema_text, retrieve_question
-from karma_mini.rag import Embedder, load_index, retrieve
+from plain_rag import Embedder, load_index, retrieve
 
 from .config import (
     FINAL_ANSWER_MODEL,
