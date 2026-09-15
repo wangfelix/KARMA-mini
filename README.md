@@ -1,17 +1,17 @@
-# KARMA Mini: NLPContributionGraph Extraction (SemEval-2021 Task 11)
+# GraphRAG and Plain RAG over NLP Research Papers
 
-KARMA Mini is a streamlined, 4-agent LLM pipeline that extracts a paper's
-**contribution knowledge graph** for the SemEval-2021 Task 11
-[NLPContributionGraph (NCG)](https://ncg-task.github.io/) shared task.
+This repository compares information retrieval and question answering over
+50 NLP research papers from the SemEval-2021 Task 11
+[NLPContributionGraph (NCG)](https://ncg-task.github.io/) trial corpus.
+Plain RAG retrieves text passages, while GraphRAG queries contribution graphs
+in Neo4j. A shared evaluation package compares their retrieved evidence and
+generated answers using the same questions and scoring stages.
 
-The repo also contains a **plain-RAG baseline** over the same corpus
-(`plain_rag/`) for a GraphRAG-vs-RAG comparison — see
-[RAG baseline](#rag-baseline-graphrag-vs-rag) below.
-
-Each scholarly NLP paper is processed **independently** and yields its own graph
-rooted at a single node literally named `Contribution`. Graphs are never merged
-across papers. This is a simplified, NCG-focused reproduction of the
-[KARMA architecture](https://github.com/YuxingLu613/KARMA).
+KARMA-Mini is the graph-extraction component: a four-agent LLM pipeline that
+extracts contribution graphs from paper text. It is a simplified, NCG-focused
+reproduction of the [KARMA architecture](https://github.com/YuxingLu613/KARMA).
+The gold-graph comparison uses the corpus's human annotations; extraction
+quality is evaluated separately.
 
 ## Repository layout
 
@@ -26,9 +26,11 @@ The two retrieval implementations are sibling packages. `evaluation/` evaluates
 both through shared stages and stays separate from either implementation.
 Extraction quality is evaluated separately by `eval_ncg.py`.
 
-## What it produces
+## KARMA-Mini extraction output
 
-For every paper, a rooted multi-way tree / DAG of triples:
+KARMA-Mini processes each paper independently and produces a rooted multi-way
+tree / DAG of triples. Each graph starts at a node named `Contribution`, and
+graphs are not merged across papers:
 
 ```
 (Contribution || has research problem || Statistical Machine Translation)
@@ -59,7 +61,7 @@ Mandatory per paper: `RESEARCHPROBLEM`, `RESULTS`, and at least one of
 `system`/`architecture` → `MODEL`; `EXPERIMENTALSETUP` only when hardware is
 mentioned, otherwise `HYPERPARAMETERS`.
 
-## The 4-Agent Architecture
+## KARMA-Mini extraction architecture
 
 The pipeline (`karma_mini/core/pipeline.py`) runs four agents **per paper**,
 mirroring the task's own granularities (sentences → phrases → triples):
@@ -112,7 +114,7 @@ loader (`karma_mini/loader.py`) reads it and attaches simple section hints from
 the standalone header lines Stanza preserves (`title`, `abstract`,
 `Introduction`, …). **No OCR is performed** — the dataset ships plaintext.
 
-## Setup & Usage
+## Setup and running graph extraction
 
 Use Python 3.10 or newer.
 
@@ -127,8 +129,8 @@ Use Python 3.10 or newer.
    KIT_BASE_URL=https://ki-toolbox.scc.kit.edu/api/v1
    ```
 
-3. **Run the pipeline** over the whole trial set (writes predictions mirroring
-   the gold folder layout):
+3. **Run the extraction pipeline** over the whole trial set (writes predictions
+   mirroring the gold folder layout):
    ```bash
    python -m karma_mini --data data/ncg/trial-data --out data/ncg/predictions
    ```
@@ -148,7 +150,7 @@ Use Python 3.10 or newer.
    entities.txt       # "<line>\t<start>\t<end>\t<phrase>"
    ```
 
-## Evaluation
+## Extraction evaluation
 
 Scoring uses the **official** SemEval-2021 Task 11 scorer, pinned as a Git
 submodule in `scoring/`. Initialize it after cloning this repository:
@@ -176,9 +178,13 @@ required.)
 GraphRAG-vs-RAG comparison (the GraphRAG side retrieves over the gold
 contribution triples of the same papers).
 
-The command-line implementation lives in `plain_rag/cli.py` and is launched
-with `python -m plain_rag`. The original `rag.py` remains a compatibility
-launcher with the same arguments.
+The command-line implementation lives in `plain_rag/cli.py`. Use
+`python -m plain_rag` to launch it. The optional root script `rag_cli.py`
+accepts the same arguments:
+
+```bash
+python rag_cli.py --help
+```
 
 Pipeline (per the classic RAG architecture):
 

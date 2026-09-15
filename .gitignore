@@ -19,5 +19,5 @@ __pycache__/
 /paper/
 /poster_assets/
 
-# RAG index artifacts (rebuild with: python rag.py index)
+# RAG index artifacts (rebuild with: python -m plain_rag index)
 data/rag/

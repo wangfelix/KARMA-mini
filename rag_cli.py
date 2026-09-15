@@ -1,4 +1,4 @@
-"""Compatibility entry point for the top-level plain_rag package.
+"""Command-line launcher for the Plain-RAG package.
 
 Prefer ``python -m plain_rag`` for new commands.
 """
