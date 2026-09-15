@@ -114,8 +114,8 @@ example_queries = [
     "What is LSTM",
     "how many papers use LSTM",
     "which papers use attention mechanism",
-    "what model does question-answering/0 use",
-    "how many papers are in the graph",
+    "What is BERT?",
+    "Which models are used in entity recognition?",
 ]
 
 if "question" not in st.session_state:
