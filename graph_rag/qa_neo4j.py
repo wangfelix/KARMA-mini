@@ -1,7 +1,6 @@
 """Simple NLQ -> Cypher -> Neo4j -> natural-language-answer QA system.
 
 
-
 Usage:
     python -m graph_rag.qa_neo4j --uri bolt://localhost:7687 --user neo4j
 
@@ -17,6 +16,8 @@ import re
 from typing import Any
 
 from neo4j import GraphDatabase
+
+from .prompts import ANSWER_SYSTEM_PROMPT, CYPHER_SYSTEM_PROMPT
 
 try:
     from dotenv import load_dotenv
@@ -152,65 +153,6 @@ e.paper_id, since e.paper_id only exists on structural nodes.
 # NLQ -> Cypher -> results -> natural language answer
 # ---------------------------------------------------------------------------
 
-def load_skill(path=None):
-    """Load the Cypher-generation instructions from an external markdown
-    file so they can be edited without touching this script. Resolves the
-    default path relative to THIS script's own location (not the current
-    working directory), so it works no matter where the program is
-    launched from -- important once teammates run this on their own
-    machines. Falls back to a minimal built-in prompt if the file is
-    missing."""
-    if path is None:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(script_dir, "skill.md")
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        print(f"[warning] {path} not found, using minimal built-in prompt")
-        return (
-            "You translate a natural-language question about a scholarly-"
-            "paper contribution knowledge graph into a single Cypher query. "
-            "Use toLower(...) CONTAINS toLower(...) for fuzzy text matching, "
-            "filter paper_id and info_unit as exact properties (never search "
-            "for them inside Entity.name), and never invent relationship "
-            "type names."
-        )
-
-
-CYPHER_SYSTEM_PROMPT = (
-    load_skill() + "\n\n"
-    "Return ONLY the Cypher query itself, no explanation, no markdown fences."
-)
-
-ANSWER_SYSTEM_PROMPT = """You answer the user's question using ONLY the \
-provided Cypher query results, in natural, conversational English -- like \
-a knowledgeable research assistant explaining findings, not a database \
-dump. Write full sentences that weave in the actual details from the \
-results (the original predicate_text wording, the info_unit category, how \
-entities connect) rather than just listing bare names or IDs. Give enough \
-context that someone who hasn't seen the raw data would understand WHY \
-the answer is true, not just WHAT it is. For example, instead of "Paper X: \
-LSTM", say something like "Paper X uses an LSTM-based architecture, \
-specifically describing it as '<predicate_text wording>'." If multiple \
-papers or facts are involved, briefly note what's similar or different \
-between them instead of just concatenating them.
-
-Ground rules that still apply:
-- Never state anything not directly supported by the provided results --
-  no outside knowledge, no filling in gaps with assumptions.
-- If results are empty, say so plainly instead of guessing.
-- Always mention which paper(s) (paper_id) a specific claim comes from.
-- For a pure aggregate answer (a single count/total with no per-paper
-  breakdown), just state the number naturally -- don't force a paper_id
-  citation onto it, but a sentence of context is still welcome (e.g. "27
-  papers mention LSTM, spanning all five task categories.").
-- If the results contain a list of items, you MUST include every single
-  one -- never silently truncate, sample, or drop items, no matter how
-  many there are. A natural-sounding answer does not mean a shorter one;
-  weave every item in, grouped or summarized narratively if that helps
-  readability, but nothing gets left out."""
-
 
 def get_known_info_units(driver):
     with driver.session() as session:
@@ -263,19 +205,13 @@ RETURN_HEAD = re.compile(r"\bRETURN\s+(DISTINCT\s+)?", re.IGNORECASE)
 
 
 def add_direction_projection(cypher: str) -> str:
-    """Append subject and object columns read from the relationship itself.
+    """Add subject and object columns that preserve each stored edge's direction.
 
-    An undirected pattern ``-[r]-`` binds whichever endpoint matched the
-    search, so projecting the node variables loses the direction of the fact:
-    the same edge is returned twice with the roles swapped, and a reader
-    cannot tell "A outperforms B" from "B outperforms A". ``startNode`` and
-    ``endNode`` read direction off the relationship and are correct whichever
-    side matched.
-
-    The rewrite is deliberately conservative. It applies only to a plain
-    projection over a single simply-bound relationship variable, and leaves
-    aggregates, variable-length patterns, and path returns untouched, since
-    adding columns to those would change the result rather than annotate it.
+    For undirected patterns, ``startNode`` and ``endNode`` identify the true
+    subject and object regardless of which endpoint matched the query.
+    Supports one to three named relationships and skips aggregate queries,
+    queries containing ``*``, or queries already projecting ``startNode`` for
+    one of those relationships.
     """
     if AGGREGATE_CALL.search(cypher) or "*" in cypher:
         return cypher
@@ -653,21 +589,21 @@ def answer_question(driver, client, model_name, schema_text, question):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="KARMA Mini Graph QA")
-    ap.add_argument("--uri", default=os.getenv("NEO4J_URI", "bolt://localhost:7687"))
-    ap.add_argument("--user", default=os.getenv("NEO4J_USER", "neo4j"))
-    ap.add_argument("--password", default=os.getenv("NEO4J_PASSWORD"))
-    ap.add_argument(
+    parser = argparse.ArgumentParser(description="KARMA Mini Graph QA")
+    parser.add_argument("--uri", default=os.getenv("NEO4J_URI", "bolt://localhost:7687"))
+    parser.add_argument("--user", default=os.getenv("NEO4J_USER", "neo4j"))
+    parser.add_argument("--password", default=os.getenv("NEO4J_PASSWORD"))
+    parser.add_argument(
         "--model",
         choices=AVAILABLE_MODELS,
         default="kit.mistral-small-4-119b-a8b",
         help="Select the LLM model to query",
     )
-    ap.add_argument(
+    parser.add_argument(
         "--timeout", type=float, default=60.0,
         help="API request timeout in seconds (default: 60.0)",
     )
-    args = ap.parse_args()
+    args = parser.parse_args()
 
     if not args.password:
         raise SystemExit(

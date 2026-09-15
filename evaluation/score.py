@@ -101,14 +101,11 @@ def _integer_match(answer: str, expected: int) -> float:
 
 
 def item_recall(answer: str, reference_items: list[Any]) -> float:
-    """Fraction of reference terms that appear anywhere in the answer.
+    """Return the fraction of normalized reference strings found in the answer.
 
-    Open-ended aggregation questions ask what a collection reports about an
-    entity. Their reference is a set of terms drawn from the annotation, and a
-    fluent answer will mention some of them while phrasing the rest its own
-    way. Token F1 punishes that answer for its own wording, so recall of the
-    reference terms is the more meaningful measure of how much of the expected
-    content was recovered.
+    Non-empty reference strings are matched as substrings of the normalized
+    answer. This lexical measure does not assess factual correctness or
+    unsupported additions.
     """
     haystack = " ".join(_tokens(answer))
     needles = [" ".join(_tokens(str(item))) for item in reference_items]

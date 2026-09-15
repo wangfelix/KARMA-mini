@@ -184,11 +184,11 @@ class KnowledgeGraph:
 
     @property
     def nodes(self) -> set:
-        ns = set()
-        for t in self.triples:
-            ns.add(t.subject)
-            ns.add(t.object)
-        return ns
+        node_names = set()
+        for triple in self.triples:
+            node_names.add(triple.subject)
+            node_names.add(triple.object)
+        return node_names
 
     def group_by_info_unit(self) -> "OrderedDict[str, List[KnowledgeTriple]]":
         """Return triples grouped by canonical info-unit token, in INFO_UNITS order."""

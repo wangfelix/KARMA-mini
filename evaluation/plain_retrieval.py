@@ -12,21 +12,15 @@ PAPER_ID_PATTERN = re.compile(r"\b[a-z][a-z-]+/\d+\b", re.IGNORECASE)
 def explicit_paper_scope(question: str) -> set[str]:
     """Return paper ids explicitly named in a question.
 
-    Retained for validation only. Benchmark generator v3 emits open-corpus
-    questions that never name a paper, so Plain RAG no longer derives a
-    retrieval filter from question text. Filtering on a named identifier made
-    paper-level retrieval correct by string matching rather than by ranking,
-    which is the behaviour :func:`assert_open_corpus` now guards against.
+    Used to validate open-corpus questions, not to filter retrieval results.
     """
     return {match.lower() for match in PAPER_ID_PATTERN.findall(question)}
 
 
 def assert_open_corpus(questions: list[dict[str, Any]]) -> None:
-    """Fail loudly if any question names a paper.
+    """Reject questions containing paper identifiers.
 
-    A question containing an identifier would silently reintroduce the scope
-    filter and make the retrieval metrics uninterpretable, so this is checked
-    before an experiment runs rather than discovered in the results.
+    The benchmark must measure document retrieval without revealing the source.
     """
     offenders = [
         (question.get("id", "?"), sorted(named))

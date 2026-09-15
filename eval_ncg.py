@@ -12,8 +12,8 @@ Usage:
     python eval_ncg.py
     python eval_ncg.py --gold data/ncg/trial-data --pred data/ncg/predictions
 
-Setup (one-time): clone the official scorer into ./scoring (gitignored):
-    git clone https://github.com/ncg-task/scoring-program.git scoring
+Setup (one-time): initialize the official scorer submodule:
+    git submodule update --init scoring
 """
 
 import os
@@ -39,8 +39,8 @@ def load_official_scorer():
     if not os.path.exists(SCORER_PATH):
         sys.exit(
             "Official scorer not found at scoring/evaluation.py.\n"
-            "Clone it (gitignored):\n"
-            "  git clone https://github.com/ncg-task/scoring-program.git scoring"
+            "Initialize the scorer submodule:\n"
+            "  git submodule update --init scoring"
         )
 
     # evaluation.py imports scipy.stats and numpy at module top but never uses

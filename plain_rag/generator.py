@@ -20,10 +20,10 @@ def answer(client, model: str, query: str, hits: List[Dict],
            temperature: float = 0.1) -> str:
     """Ask the LLM to answer ``query`` from the retrieved ``hits``."""
     blocks = []
-    for h in hits:
-        c = h["chunk"]
-        section = f" ({c['section']})" if c.get("section") else ""
-        blocks.append(f"[{c['id']}]{section}\n{c['text']}")
+    for hit in hits:
+        chunk = hit["chunk"]
+        section = f" ({chunk['section']})" if chunk.get("section") else ""
+        blocks.append(f"[{chunk['id']}]{section}\n{chunk['text']}")
     context = "\n\n".join(blocks)
 
     prompt = f"""EXCERPTS:

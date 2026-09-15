@@ -1,0 +1,3 @@
+[submodule "scoring"]
+	path = scoring
+	url = https://github.com/ncg-task/scoring-program.git

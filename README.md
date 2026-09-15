@@ -5,13 +5,26 @@ KARMA Mini is a streamlined, 4-agent LLM pipeline that extracts a paper's
 [NLPContributionGraph (NCG)](https://ncg-task.github.io/) shared task.
 
 The repo also contains a **plain-RAG baseline** over the same corpus
-(`rag.py`, `karma_mini/rag/`) for a GraphRAG-vs-RAG comparison — see
+(`plain_rag/`) for a GraphRAG-vs-RAG comparison — see
 [RAG baseline](#rag-baseline-graphrag-vs-rag) below.
 
 Each scholarly NLP paper is processed **independently** and yields its own graph
 rooted at a single node literally named `Contribution`. Graphs are never merged
 across papers. This is a simplified, NCG-focused reproduction of the
 [KARMA architecture](https://github.com/YuxingLu613/KARMA).
+
+## Repository layout
+
+| Package | Responsibility | Entry point |
+| --- | --- | --- |
+| `karma_mini/` | Contribution-graph extraction agents and shared corpus loading | `python -m karma_mini` |
+| `plain_rag/` | Text chunking, embeddings, BM25/hybrid retrieval, and grounded answers | `python -m plain_rag` |
+| `graph_rag/` | Neo4j graph retrieval and answers; the existing comparison UI | `python -m graph_rag`; `streamlit run graph_rag/app.py` |
+| `evaluation/` | Shared benchmark, experiment runner, judging, scoring, and paired comparison | `python -m evaluation` |
+
+The two retrieval implementations are sibling packages. `evaluation/` evaluates
+both through shared stages and stays separate from either implementation.
+Extraction quality is evaluated separately by `eval_ncg.py`.
 
 ## What it produces
 
@@ -101,6 +114,8 @@ the standalone header lines Stanza preserves (`title`, `abstract`,
 
 ## Setup & Usage
 
+Use Python 3.10 or newer.
+
 1. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
@@ -115,15 +130,15 @@ the standalone header lines Stanza preserves (`title`, `abstract`,
 3. **Run the pipeline** over the whole trial set (writes predictions mirroring
    the gold folder layout):
    ```bash
-   python main.py --data data/ncg/trial-data --out data/ncg/predictions
+   python -m karma_mini --data data/ncg/trial-data --out data/ncg/predictions
    ```
    Run on a single paper folder (handy for inspection):
    ```bash
-   python main.py --data data/ncg/trial-data/machine-translation/0
+   python -m karma_mini --data data/ncg/trial-data/machine-translation/0
    ```
    Pick a model (`--model`) and request timeout (`--timeout`) as needed:
    ```bash
-   python main.py --model kit.gpt-oss-120b --timeout 120
+   python -m karma_mini --model kit.gpt-oss-120b --timeout 120
    ```
 
    Predictions are written to `data/ncg/predictions/<task>/<n>/`:
@@ -135,11 +150,11 @@ the standalone header lines Stanza preserves (`title`, `abstract`,
 
 ## Evaluation
 
-Scoring uses the **official** SemEval-2021 Task 11 scorer. Clone it once into
-`scoring/` (gitignored):
+Scoring uses the **official** SemEval-2021 Task 11 scorer, pinned as a Git
+submodule in `scoring/`. Initialize it after cloning this repository:
 
 ```bash
-git clone https://github.com/ncg-task/scoring-program.git scoring
+git submodule update --init scoring
 ```
 
 Then score the predictions against the gold trial data:
@@ -156,36 +171,40 @@ required.)
 
 ## RAG baseline (GraphRAG vs RAG)
 
-`rag.py` implements a standard retrieval-augmented generation pipeline over the
+`plain_rag/` implements a standard retrieval-augmented generation pipeline over the
 **raw Stanza text** of the trial papers — the plain-RAG side of a
 GraphRAG-vs-RAG comparison (the GraphRAG side retrieves over the gold
 contribution triples of the same papers).
 
+The command-line implementation lives in `plain_rag/cli.py` and is launched
+with `python -m plain_rag`. The original `rag.py` remains a compatibility
+launcher with the same arguments.
+
 Pipeline (per the classic RAG architecture):
 
-1. **Chunking** (`karma_mini/rag/corpus.py`): sliding windows of 4 Stanza
+1. **Chunking** (`plain_rag/corpus.py`): sliding windows of 4 Stanza
    sentences, stride 2 (50% overlap), each carrying paper id, line range, and
    nearest section header.
-2. **Embedding** (`karma_mini/rag/embedder.py`): `kit.qwen3-embedding-8b`
+2. **Embedding** (`plain_rag/embedder.py`): `kit.qwen3-embedding-8b`
    (4096-dim), L2-normalized, batched.
-3. **Hybrid retrieval** (`karma_mini/rag/retriever.py`): every chunk is scored
+3. **Hybrid retrieval** (`plain_rag/retriever.py`): every chunk is scored
    with **BM25** (pure-Python Okapi, `bm25.py`) and **embedding cosine
    similarity**; both are min-max normalized over the collection and combined
    as their **average** — the final ranking score.
-4. **Generation** (`karma_mini/rag/generator.py`): an LLM answers from the
+4. **Generation** (`plain_rag/generator.py`): an LLM answers from the
    retrieved excerpts only, citing sources as `[<task>/<n>:<lines>]`.
 
 Usage:
 
 ```bash
-python rag.py index                          # one-time: chunk + embed the corpus
-python rag.py search "multi-head attention"  # retrieval only, shows BM25/cosine/combined
-python rag.py ask "What is the RNN Encoder - Decoder used for?"
-python rag.py ask "..." --model azure.gpt-4.1-mini -k 8   # any chat model on the endpoint
+python -m plain_rag index                          # one-time: chunk + embed the corpus
+python -m plain_rag search "multi-head attention"  # retrieval only, shows BM25/cosine/combined
+python -m plain_rag ask "What is the RNN Encoder - Decoder used for?"
+python -m plain_rag ask "..." --model azure.gpt-4.1-mini -k 8   # any chat model on the endpoint
 ```
 
 The index lives in `data/rag/` (gitignored; rebuild anytime with
-`python rag.py index`).
+`python -m plain_rag index`). Existing indexes require no migration.
 
 ## GraphRAG and comparison UI
 
@@ -195,6 +214,7 @@ The Neo4j-backed GraphRAG implementation and its Streamlit interface live in
 - `graph_rag/load_neo4j.py` loads extracted or gold contribution triples.
 - `graph_rag/qa_neo4j.py` translates questions to Cypher and summarizes the
   graph results.
+- `graph_rag/prompts.py` contains the Cypher-generation and answer prompts.
 - `graph_rag/app.py` runs GraphRAG and plain RAG for the same question and
   displays both answers side by side, including a draggable, force-directed
   Neo4j evidence graph, generated Cypher, and retrieved text passages.
@@ -207,13 +227,39 @@ NEO4J_USER=neo4j
 NEO4J_PASSWORD=your_password
 ```
 
+Launch interactive graph question answering with:
+
+```bash
+python -m graph_rag
+```
+
 Prepare both retrieval backends once, then launch the comparison UI:
 
 ```bash
 python -m graph_rag.load_neo4j --predictions data/ncg/trial-data --clear
-python rag.py index
+python -m plain_rag index
 streamlit run graph_rag/app.py
 ```
 
 By default, the plain-RAG index is read from `data/rag/` and its top five
 passages are used. Override these with `RAG_INDEX_PATH` and `RAG_TOP_K`.
+
+## Shared RAG evaluation
+
+`evaluation/` evaluates both `plain_rag/` and `graph_rag/` using the same benchmark,
+answer generation, pointwise judging, deterministic metrics, and paired
+comparison. Its Plain-RAG adapter, `evaluation/plain_retrieval.py`, formats
+retrieval hits for evaluation and validates the benchmark's open-corpus
+constraint; the retriever itself lives in `plain_rag/retriever.py`.
+
+`python -m evaluation` launches the complete comparison pipeline and accepts the
+same arguments as `python -m evaluation.run_comparison`. Individual stages remain
+available as modules such as `evaluation.run_experiment`, `evaluation.judge`,
+`evaluation.score`, and `evaluation.compare_systems`.
+
+See [the evaluation guide](evaluation/README.md) for preparation, frozen
+configuration, and commands. Inspect the entry point without starting a run:
+
+```bash
+python -m evaluation --help
+```

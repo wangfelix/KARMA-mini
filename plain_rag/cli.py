@@ -62,24 +62,24 @@ def main():
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL, timeout=args.timeout)
 
     if args.cmd == "index":
-        idx = build_index(client, args.data, args.out, embed_model=args.embed_model)
-        print(f"\nIndexed {idx.meta['n_chunks']} chunks "
-              f"(dim {idx.meta['dim']}) -> {args.out}\n")
+        rag_index = build_index(client, args.data, args.out, embed_model=args.embed_model)
+        print(f"\nIndexed {rag_index.meta['n_chunks']} chunks "
+              f"(dim {rag_index.meta['dim']}) -> {args.out}\n")
         return
 
-    idx = load_index(args.index)
-    embedder = Embedder(client, model=idx.meta["embed_model"])
-    hits = hybrid_search(idx, embedder, args.query, k=args.k)
+    rag_index = load_index(args.index)
+    embedder = Embedder(client, model=rag_index.meta["embed_model"])
+    hits = hybrid_search(rag_index, embedder, args.query, k=args.k)
 
     if args.cmd == "search":
         print(f"\nTop {len(hits)} for: {args.query!r}\n")
-        for rank, h in enumerate(hits, 1):
-            c = h["chunk"]
-            section = f" | {c['section']}" if c.get("section") else ""
-            print(f"[{rank}] combined={h['score']:.3f}  "
-                  f"(bm25={h['bm25']:.2f}, cosine={h['cosine']:.3f})")
-            print(f"    {c['id']}{section}")
-            text = c["text"]
+        for rank, hit in enumerate(hits, 1):
+            chunk = hit["chunk"]
+            section = f" | {chunk['section']}" if chunk.get("section") else ""
+            print(f"[{rank}] combined={hit['score']:.3f}  "
+                  f"(bm25={hit['bm25']:.2f}, cosine={hit['cosine']:.3f})")
+            print(f"    {chunk['id']}{section}")
+            text = chunk["text"]
             print(f"    {text[:220]}{'...' if len(text) > 220 else ''}\n")
         return
 
@@ -87,10 +87,10 @@ def main():
     print(answer(client, args.model, args.query, hits))
     print("\nSources:")
 
-    for h in hits:
-        c = h["chunk"]
-        print(f"  [{c['id']}] combined={h['score']:.3f} "
-              f"(bm25={h['bm25']:.2f}, cosine={h['cosine']:.3f})")
+    for hit in hits:
+        chunk = hit["chunk"]
+        print(f"  [{chunk['id']}] combined={hit['score']:.3f} "
+              f"(bm25={hit['bm25']:.2f}, cosine={hit['cosine']:.3f})")
     print()
 
 

@@ -13,10 +13,8 @@ logger = logging.getLogger(__name__)
 # Sentences are sent to the model in windows to stay within context limits.
 MAX_SENTENCES_PER_CALL = 120
 
-# Hard cap on selections per paper. Gold papers annotate only a handful of
-# contribution sentences (~10% of lines; typically 8-15), and every extra
-# selection floods the downstream triple/phrase predictions with false
-# positives — the scorer is exact-match, so precision dies fast.
+# Cap selected sentences per paper to limit downstream false-positive triples
+# and phrases.
 MAX_SELECTIONS = 15
 
 

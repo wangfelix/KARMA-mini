@@ -60,11 +60,8 @@ STRUCTURAL_NAMES = {
 
 STRUCTURAL_PREDICATES = {"has", "has research problem", "code"}
 
-# Entities used for the cross-paper questions. Each occurs in at least two gold
-# graphs and in between three and eight paper texts. The upper bound matters:
-# Plain RAG retrieves eight chunks, so an entity appearing in thirty papers
-# would make exhaustive enumeration impossible for a top-k retriever regardless
-# of retrieval quality. Fixing this list keeps regeneration stable.
+# Fixed entities for reproducible cross-paper questions. Candidates must occur
+# in at least two gold graphs and two to eight paper texts.
 SHARED_ENTITIES = (
     "BERT",
     "BioBERT",

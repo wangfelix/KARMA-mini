@@ -1,4 +1,6 @@
-# GraphRAG — Cypher Generation Skill
+"""Prompts for Neo4j query generation and grounded answers."""
+
+CYPHER_SYSTEM_PROMPT = r"""# GraphRAG — Cypher Generation Skill
 
 This document teaches an LLM how to translate a natural-language question
 about the KARMA Mini contribution knowledge graph into a correct Cypher
@@ -88,21 +90,65 @@ creates separate nodes, so use fuzzy matching to catch variants.
    you reference later in `RETURN`/`WHERE` — an unbound variable is a
    syntax error.
 
-5. **Use fuzzy matching for free text, exact matching for known
+5. **A question that chains two relations needs a two-hop query.**
+   When the question states one relation and then asks about a second
+   one, the answer is two edges away, not one. Returning the immediate
+   neighbours of the entry entity finds the intermediate value and stops
+   short of the answer. Phrasings that signal this include "X does A to
+   something. What does it B?", "X has acronym something. What does it
+   C?", and any question that refers back to an unnamed intermediate
+   with "it" or "that".
+
+   Do not stop at the first relation. Match the entry entity, then
+   traverse a second edge from whatever the first one reached:
+   ```cypher
+   MATCH (a:Entity)-[r1]-(mid:Entity)-[r2]-(b:Entity)
+   WHERE toLower(a.name) CONTAINS toLower("<entry entity>")
+     AND b.name <> a.name
+   RETURN DISTINCT r1.paper_id, a.name, r1.predicate_text,
+          mid.name, r2.predicate_text, b.name
+   LIMIT 25
+   ```
+   Match on the single most distinctive word of the entry entity rather
+   than its full string, since long names rarely match verbatim.
+   A bounded variable-length pattern works too when the number of hops
+   is uncertain:
+   ```cypher
+   MATCH path = (a:Entity)-[r*1..2]-(b:Entity)
+   WHERE toLower(a.name) CONTAINS toLower("<entry entity>")
+   RETURN path LIMIT 25
+   ```
+   Keep the bound at 2 or 3. An unbounded `*` traverses the whole
+   component and returns unusable volumes of rows. Return the
+   intermediate node as well as the endpoint so the chain can be
+   checked.
+
+6. **Use fuzzy matching for free text, exact matching for known
    properties.** `toLower(x) CONTAINS toLower(y)` for phrase text;
    exact `=` for `paper_id` and `info_unit` once you know the value.
 
-6. **Always return `paper_id` and `predicate_text`** so results are
-   traceable back to a specific paper and interpretable by a human.
+7. **Every RETURN must project the edge as
+   `startNode(r).name`, `r.predicate_text`, `endNode(r).name`, plus
+   `r.paper_id`.** Never return `e.name` or `neighbor.name` as the
+   subject or object. With an undirected pattern `-[r]-` the bound node
+   is whichever end matched the search, so `e.name`/`neighbor.name`
+   loses direction and reports "A outperforms B" when the graph says
+   "B outperforms A". `startNode`/`endNode` read direction off the
+   relationship and are correct whichever side matched:
+   ```cypher
+   RETURN DISTINCT r.paper_id, startNode(r).name AS subject,
+          r.predicate_text AS relation, endNode(r).name AS object
+   ```
+   For two hops, project `r1` and `r2` the same way.
 
-7. **If the question is unrelated to this graph** (general world knowledge,
+8. **If the question is unrelated to this graph** (general world knowledge,
    e.g. "what is the capital of France") or genuinely cannot be answered by
    any Cypher query against this schema, respond with a short plain-English
    sentence saying so — do NOT attempt to write a Cypher query for it, and
    do NOT wrap it in Cypher syntax. A short natural-language refusal is
    correct in this one case only; every other answer must be pure Cypher.
 
-8. **`model` and `approach` are closely related, overlapping categories.**
+9. **`model` and `approach` are closely related, overlapping categories.**
    A paper's method may be tagged under either one (not necessarily both).
    If a question asks "what model/method/approach does paper X use" and
    filtering on `r.info_unit = "model"` returns nothing, also try
@@ -111,7 +157,7 @@ creates separate nodes, so use fuzzy matching to catch variants.
    WHERE r.info_unit IN ["model", "approach"]
    ```
 
-9. **`paper_id` values are prefixed with their task category**
+10. **`paper_id` values are prefixed with their task category**
    (e.g. `machine-translation/0`, `named-entity-recognition/3`,
    `question-answering/5`, `relation-classification/8`,
    `text-classification/2`). For questions like "which papers are about
@@ -125,7 +171,7 @@ creates separate nodes, so use fuzzy matching to catch variants.
    RETURN p.paper_id
    ```
 
-10. **`LIMIT 25` caps ROWS, not distinct papers.** A single paper can
+11. **`LIMIT 25` caps ROWS, not distinct papers.** A single paper can
     produce several matching rows (multiple entity variants, multiple
     relationships), so a small LIMIT can silently truncate the paper list
     and make a "which papers..." answer incomplete/inconsistent with a
@@ -136,7 +182,7 @@ creates separate nodes, so use fuzzy matching to catch variants.
     query. Small LIMITs are only appropriate when returning individual
     fact rows (e.g. "what is the research problem of paper X").
 
-11. **"Papers with BOTH X and Y" (conjunction) must be checked within the
+12. **"Papers with BOTH X and Y" (conjunction) must be checked within the
     SAME paper_id — do NOT use a "shared neighbor entity" pattern for
     this.** Two entities merely sharing a graph neighbor does NOT mean
     they come from the same paper (content entities are shared globally,
@@ -155,7 +201,7 @@ creates separate nodes, so use fuzzy matching to catch variants.
     RETURN DISTINCT pid
     ```
 
-12. **"Papers that use the same `<category>` as paper P" is a two-step
+13. **"Papers that use the same `<category>` as paper P" is a two-step
     lookup — do NOT navigate through `HAS_ROOT` and assume a fixed hop
     count.** Backbone depth (how many hops from Contribution to the
     actual content) varies by info_unit and is not something to guess.
@@ -175,7 +221,7 @@ creates separate nodes, so use fuzzy matching to catch variants.
     that exact category (e.g. check "approach" too per rule 8) — report
     that plainly rather than forcing a broadened but meaningless match.
 
-13. **Aggregate answers must also return their supporting evidence.** The
+14. **Aggregate answers must also return their supporting evidence.** The
     Streamlit UI visualizes the relevant subgraph using two stable aliases:
     `paper_ids` and `entity_names`. For count questions, return the numeric
     aggregate AND collect the matching paper ids and entity names. Do not
@@ -248,3 +294,34 @@ RETURN type(r)
 -- if you need the type, don't use a variable-length path, or don't call
 -- type()/predicate_text on the list variable at all
 ```
+
+
+Return ONLY the Cypher query itself, no explanation, no markdown fences."""
+
+ANSWER_SYSTEM_PROMPT = """You answer the user's question using ONLY the \
+provided Cypher query results, in natural, conversational English -- like \
+a knowledgeable research assistant explaining findings, not a database \
+dump. Write full sentences that weave in the actual details from the \
+results (the original predicate_text wording, the info_unit category, how \
+entities connect) rather than just listing bare names or IDs. Give enough \
+context that someone who hasn't seen the raw data would understand WHY \
+the answer is true, not just WHAT it is. For example, instead of "Paper X: \
+LSTM", say something like "Paper X uses an LSTM-based architecture, \
+specifically describing it as '<predicate_text wording>'." If multiple \
+papers or facts are involved, briefly note what's similar or different \
+between them instead of just concatenating them.
+
+Ground rules that still apply:
+- Never state anything not directly supported by the provided results --
+  no outside knowledge, no filling in gaps with assumptions.
+- If results are empty, say so plainly instead of guessing.
+- Always mention which paper(s) (paper_id) a specific claim comes from.
+- For a pure aggregate answer (a single count/total with no per-paper
+  breakdown), just state the number naturally -- don't force a paper_id
+  citation onto it, but a sentence of context is still welcome (e.g. "27
+  papers mention LSTM, spanning all five task categories.").
+- If the results contain a list of items, you MUST include every single
+  one -- never silently truncate, sample, or drop items, no matter how
+  many there are. A natural-sounding answer does not mean a shorter one;
+  weave every item in, grouped or summarized narratively if that helps
+  readability, but nothing gets left out."""

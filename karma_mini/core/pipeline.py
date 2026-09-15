@@ -56,7 +56,7 @@ class KARMAPipeline:
             paper_id = paper["paper_id"]
             sentences = paper["sentences"]
             hints = paper["section_hints"]
-            sent_map = {ln: txt for ln, txt in sentences}
+            sentences_by_line = {ln: txt for ln, txt in sentences}
 
             print("=" * 60)
             print(f" {paper_id} ".center(60, "="))
@@ -72,15 +72,16 @@ class KARMAPipeline:
             #    far are offered back to the agent for cross-sentence chaining.
             triples = []
             known_nodes = []
-            for sel in aligned:
-                ts = self.tea.process(sel["line"], sel["text"], sel["info_unit"],
-                                      known_nodes=known_nodes)
-                for t in ts:
-                    t["source_paper"] = paper_id
-                    for phrase in (t["subject"], t["object"]):
+            for selection in aligned:
+                extracted_triples = self.tea.process(
+                    selection["line"], selection["text"], selection["info_unit"],
+                    known_nodes=known_nodes)
+                for triple in extracted_triples:
+                    triple["source_paper"] = paper_id
+                    for phrase in (triple["subject"], triple["object"]):
                         if not is_structural_node(phrase) and phrase not in known_nodes:
                             known_nodes.append(phrase)
-                triples.extend(ts)
+                triples.extend(extracted_triples)
 
             # 4. Knowledge integration (per-paper rooted graph assembly).
             graph = self.kia.process(triples, paper_id=paper_id)
@@ -89,7 +90,7 @@ class KARMAPipeline:
             #    the CSA's selection (even lines that yielded no triples).
             pred_lines = sorted({s["line"] for s in aligned})
             stats = write_predictions(paper_id, graph, out_root,
-                                      sentences=sent_map,
+                                      sentences=sentences_by_line,
                                       contribution_lines=pred_lines)
 
             units = ", ".join(graph.group_by_info_unit().keys()) or "(none)"
